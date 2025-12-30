@@ -63,7 +63,7 @@ export default function Dashboard() {
         ? validQtySoldDiscount * product.cashPrice * 0.10 
         : 0;
 
-      const soldValue = qtySold * product.cashPrice;
+      const soldValue = qtySold * product.creditPrice;
 
       totalSoldQuantity += qtySold;
       totalSoldValue += soldValue;
