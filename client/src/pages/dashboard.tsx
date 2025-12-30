@@ -4,18 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
-import { Calculator, CreditCard, DollarSign, Package, Percent, Info } from "lucide-react";
+import { Calculator, CreditCard, DollarSign, Package, Percent, Info, AlertCircle } from "lucide-react";
 
 // Types for user input state
 type ProductInput = {
   quantityGiven: number | "";
   quantityLeft: number | "";
-  quantityCash: number | "";
   quantityCredit: number | "";
-  discountAmount: number | "";
+  discountItems: number | "";
 };
 
 type InputsMap = Record<string, ProductInput>;
@@ -25,7 +23,7 @@ export default function Dashboard() {
   const [inputs, setInputs] = useState<InputsMap>(() => {
     const initial: InputsMap = {};
     PRELOADED_PRODUCTS.forEach((p) => {
-      initial[p.id] = { quantityGiven: "", quantityLeft: "", quantityCash: "", quantityCredit: "", discountAmount: "" };
+      initial[p.id] = { quantityGiven: "", quantityLeft: "", quantityCredit: "", discountItems: "" };
     });
     return initial;
   });
@@ -45,9 +43,8 @@ export default function Dashboard() {
   // Calculations
   const calculations = useMemo(() => {
     let totalCashSalesValue = 0;
-    let totalCreditSalesValue = 0;
-    let totalSoldValue = 0;
-    let totalDiscountGiven = 0;
+    let totalCreditDebt = 0;
+    let totalDiscountValue = 0;
     let totalQuantityRemaining = 0;
     let totalQuantityGiven = 0;
 
@@ -55,50 +52,48 @@ export default function Dashboard() {
       const input = inputs[product.id];
       const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
       const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
-      const qtyCash = input.quantityCash === "" ? 0 : input.quantityCash;
       const qtyCredit = input.quantityCredit === "" ? 0 : input.quantityCredit;
-      const discountAmount = input.discountAmount === "" ? 0 : input.discountAmount;
+      const discountItems = input.discountItems === "" ? 0 : input.discountItems;
       
       const qtySold = Math.max(0, qtyGiven - qtyLeft);
+      const qtyCash = Math.max(0, qtySold - qtyCredit);
       
-      // Ensure cash + credit doesn't exceed sold quantity
-      const validQtyCash = Math.min(qtyCash, qtySold);
-      const validQtyCredit = Math.min(qtyCredit, Math.max(0, qtySold - validQtyCash));
+      // Cash sales value (before discount)
+      const cashSalesValue = qtyCash * product.cashPrice;
       
-      const cashSalesValue = validQtyCash * product.cashPrice;
-      const creditSalesValue = validQtyCredit * product.creditPrice;
-      const totalProductValue = cashSalesValue + creditSalesValue;
-
-      totalCashSalesValue += cashSalesValue;
-      totalCreditSalesValue += creditSalesValue;
-      totalSoldValue += totalProductValue;
-      totalDiscountGiven += discountAmount;
+      // Credit sales value
+      const creditSalesValue = qtyCredit * product.creditPrice;
+      
+      // Discount: 10% on cash sales for the discount items
+      const validDiscountItems = Math.min(discountItems, qtyCash);
+      const discountValue = validDiscountItems * product.cashPrice * 0.10;
+      
+      totalCashSalesValue += (cashSalesValue - discountValue);
+      totalCreditDebt += creditSalesValue;
+      totalDiscountValue += discountValue;
       totalQuantityRemaining += qtyLeft;
       totalQuantityGiven += qtyGiven;
 
       return {
         ...product,
         qtySold,
-        validQtyCash,
-        validQtyCredit,
+        qtyCash,
+        qtyCredit,
         cashSalesValue,
         creditSalesValue,
-        totalProductValue,
-        discountAmount,
+        discountValue,
+        validDiscountItems,
       };
     });
-
-    const finalCashRevenue = totalCashSalesValue - totalDiscountGiven;
 
     return {
       productsCalculated,
       totalCashSalesValue,
-      totalCreditSalesValue,
-      totalSoldValue,
-      totalDiscountGiven,
+      totalCreditDebt,
+      totalDiscountValue,
       totalQuantityRemaining,
       totalQuantityGiven,
-      finalCashRevenue
+      finalCashRevenue: totalCashSalesValue,
     };
   }, [inputs]);
 
@@ -113,7 +108,7 @@ export default function Dashboard() {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pharmacy Accounting</h1>
-            <p className="text-slate-500 mt-1">Track sales by cash and credit, manage inventory and discounts.</p>
+            <p className="text-slate-500 mt-1">Track inventory, manage credit sales, and apply discounts.</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm">
@@ -125,29 +120,29 @@ export default function Dashboard() {
         {/* Top Reports Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <ReportCard 
-            title="Cash Sales" 
+            title="Cash Sales (After Discount)" 
             value={formatCurrency(calculations.totalCashSalesValue)}
             icon={<DollarSign className="w-4 h-4 text-blue-600" />}
             colorClass="text-blue-700 bg-blue-50/50 border-blue-100"
           />
           <ReportCard 
-            title="Credit Sales" 
-            value={formatCurrency(calculations.totalCreditSalesValue)}
+            title="Total Credit Debt" 
+            value={formatCurrency(calculations.totalCreditDebt)}
             icon={<CreditCard className="w-4 h-4 text-purple-600" />}
             colorClass="text-purple-700 bg-purple-50/50 border-purple-100"
           />
           <ReportCard 
-            title="Total Discount" 
-            value={formatCurrency(calculations.totalDiscountGiven)}
+            title="Total Discount (10%)" 
+            value={formatCurrency(calculations.totalDiscountValue)}
             icon={<Percent className="w-4 h-4 text-orange-600" />}
             colorClass="text-orange-700 bg-orange-50/50 border-orange-100"
           />
           <ReportCard 
-            title="Final Cash Revenue" 
-            value={formatCurrency(calculations.finalCashRevenue)}
-            icon={<Calculator className="w-4 h-4 text-emerald-600" />}
-            colorClass="text-emerald-700 bg-emerald-50/50 border-emerald-100"
-            highlight
+            title="Items Remaining" 
+            value={`${calculations.totalQuantityRemaining}`}
+            subValue={`of ${calculations.totalQuantityGiven} total`}
+            icon={<Package className="w-4 h-4 text-slate-600" />}
+            colorClass="text-slate-700 bg-white border-slate-200"
           />
         </div>
 
@@ -157,7 +152,7 @@ export default function Dashboard() {
             <CardTitle>Product Sales Entry</CardTitle>
             <CardDescription className="flex items-start gap-2 mt-2">
               <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600" />
-              <span>Enter: Qty Given, Qty Left, Qty Cash Sales, Qty Credit Sales, and Discount Amount</span>
+              <span>Enter Qty Given, Qty Left (unsold), Qty Sold on Credit, and number of items to discount (10% applied automatically)</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -175,17 +170,16 @@ export default function Dashboard() {
                       Qty<br/>Left
                     </TableHead>
                     <TableHead className="text-center text-xs">Qty<br/>Sold</TableHead>
-                    <TableHead className="w-[80px] bg-blue-50/30 text-blue-900 border-l border-blue-100">
-                      Qty<br/>Cash
-                    </TableHead>
                     <TableHead className="w-[80px] bg-indigo-50/30 text-indigo-900 border-l border-indigo-100">
-                      Qty<br/>Credit
+                      Qty Credit<br/>Sold
                     </TableHead>
+                    <TableHead className="text-center text-xs">Cash<br/>Qty</TableHead>
                     <TableHead className="text-right text-xs">Cash<br/>Value</TableHead>
                     <TableHead className="text-right text-xs">Credit<br/>Value</TableHead>
                     <TableHead className="w-[80px] bg-orange-50/30 text-orange-900 border-l border-orange-100">
-                      Discount
+                      Items to<br/>Discount
                     </TableHead>
+                    <TableHead className="text-right text-xs">Discount<br/>10%</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -225,17 +219,6 @@ export default function Dashboard() {
                       <TableCell className="text-center font-mono-numbers text-sm font-medium text-slate-700">
                         {product.qtySold}
                       </TableCell>
-                      <TableCell className="bg-blue-50/10 border-l border-blue-100/50 p-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="h-7 font-mono-numbers text-center text-sm bg-white border-blue-200 focus-visible:ring-blue-500"
-                          value={inputs[product.id]?.quantityCash}
-                          onChange={(e) => handleInputChange(product.id, "quantityCash", e.target.value)}
-                          data-testid={`input-qty-cash-${product.id}`}
-                        />
-                      </TableCell>
                       <TableCell className="bg-indigo-50/10 border-l border-indigo-100/50 p-1">
                         <Input
                           type="number"
@@ -247,6 +230,9 @@ export default function Dashboard() {
                           data-testid={`input-qty-credit-${product.id}`}
                         />
                       </TableCell>
+                      <TableCell className="text-center font-mono-numbers text-sm text-slate-700">
+                        {product.qtyCash}
+                      </TableCell>
                       <TableCell className="text-right font-mono-numbers text-sm text-slate-600">
                         {formatCurrency(product.cashSalesValue)}
                       </TableCell>
@@ -257,13 +243,15 @@ export default function Dashboard() {
                         <Input
                           type="number"
                           min="0"
-                          step="0.01"
-                          placeholder="0.00"
+                          placeholder="0"
                           className="h-7 font-mono-numbers text-center text-sm bg-white border-orange-200 focus-visible:ring-orange-500"
-                          value={inputs[product.id]?.discountAmount}
-                          onChange={(e) => handleInputChange(product.id, "discountAmount", e.target.value)}
-                          data-testid={`input-discount-${product.id}`}
+                          value={inputs[product.id]?.discountItems}
+                          onChange={(e) => handleInputChange(product.id, "discountItems", e.target.value)}
+                          data-testid={`input-discount-items-${product.id}`}
                         />
+                      </TableCell>
+                      <TableCell className="text-right font-mono-numbers text-sm text-orange-600 font-medium">
+                        {formatCurrency(product.discountValue)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -276,35 +264,31 @@ export default function Dashboard() {
         {/* Summary Card */}
         <Card className="border shadow-sm bg-slate-900 text-slate-50">
           <CardHeader>
-            <CardTitle className="text-slate-100">Daily Summary</CardTitle>
+            <CardTitle className="text-slate-100">Daily Revenue Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Cash Sales</span>
-                  <span className="font-mono-numbers">{formatCurrency(calculations.totalCashSalesValue)}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Credit Sales</span>
-                  <span className="font-mono-numbers">{formatCurrency(calculations.totalCreditSalesValue)}</span>
+                  <span className="text-slate-400">Total Discount (10%)</span>
+                  <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountValue)}</span>
                 </div>
                 <Separator className="bg-slate-700" />
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-200">Total Sales Value</span>
-                  <span className="font-mono-numbers">{formatCurrency(calculations.totalSoldValue)}</span>
+                  <span className="text-slate-200">Cash Revenue</span>
+                  <span className="font-mono-numbers text-blue-300">{formatCurrency(calculations.totalCashSalesValue)}</span>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Total Discount</span>
-                  <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountGiven)}</span>
+                  <span className="text-slate-400">Total Credit Debt</span>
+                  <span className="font-mono-numbers text-purple-300">{formatCurrency(calculations.totalCreditDebt)}</span>
                 </div>
                 <Separator className="bg-slate-700" />
-                <div className="pt-2">
-                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Final Cash Revenue</div>
-                  <div className="text-3xl font-bold font-mono-numbers text-emerald-300 tracking-tight">
-                    {formatCurrency(calculations.finalCashRevenue)}
+                <div className="pt-2 border-t border-slate-700">
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Total Outstanding</div>
+                  <div className="text-2xl font-bold font-mono-numbers text-slate-100 tracking-tight">
+                    {formatCurrency(calculations.totalCreditDebt)}
                   </div>
                 </div>
               </div>
@@ -316,7 +300,7 @@ export default function Dashboard() {
   );
 }
 
-function ReportCard({ title, value, icon, colorClass, highlight = false }: any) {
+function ReportCard({ title, value, subValue, icon, colorClass, highlight = false }: any) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -328,7 +312,10 @@ function ReportCard({ title, value, icon, colorClass, highlight = false }: any) 
         <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{title}</p>
         {icon}
       </div>
-      <h3 className="text-xl font-bold font-mono-numbers tracking-tight">{value}</h3>
+      <div className="flex items-baseline gap-2">
+        <h3 className="text-xl font-bold font-mono-numbers tracking-tight">{value}</h3>
+        {subValue && <span className="text-sm opacity-70">{subValue}</span>}
+      </div>
     </motion.div>
   );
 }
