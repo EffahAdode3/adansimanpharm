@@ -1,37 +1,34 @@
 import React, { useState, useMemo } from "react";
-import { PRELOADED_PRODUCTS, Product } from "../data/products";
+import { PRELOADED_PRODUCTS } from "../data/products";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
-import { Calculator, CreditCard, DollarSign, Package, Percent, Info, AlertCircle } from "lucide-react";
+import { DollarSign, CreditCard, Percent, AlertCircle } from "lucide-react";
 
-// Types for user input state
 type ProductInput = {
-  quantityGiven: number | "";
   quantityLeft: number | "";
-  quantityCredit: number | "";
-  discountItems: number | "";
+  quantitySoldDiscount: number | "";
 };
 
 type InputsMap = Record<string, ProductInput>;
 
 export default function Dashboard() {
-  // State for product inputs
   const [inputs, setInputs] = useState<InputsMap>(() => {
     const initial: InputsMap = {};
     PRELOADED_PRODUCTS.forEach((p) => {
-      initial[p.id] = { quantityGiven: "", quantityLeft: "", quantityCredit: "", discountItems: "" };
+      initial[p.id] = { quantityLeft: "", quantitySoldDiscount: "" };
     });
     return initial;
   });
 
-  // Handle input changes
+  const [totalCreditDebt, setTotalCreditDebt] = useState<number | "">("");
+
   const handleInputChange = (id: string, field: keyof ProductInput, value: string) => {
     const numValue = value === "" ? "" : parseFloat(value);
-    // Basic validation: verify non-negative
     if (typeof numValue === "number" && numValue < 0) return;
     
     setInputs((prev) => ({
@@ -40,217 +37,189 @@ export default function Dashboard() {
     }));
   };
 
-  // Calculations
   const calculations = useMemo(() => {
-    let totalCashSalesValue = 0;
-    let totalCreditDebt = 0;
+    let totalSoldQuantity = 0;
+    let totalSoldValue = 0;
     let totalDiscountValue = 0;
     let totalQuantityRemaining = 0;
     let totalQuantityGiven = 0;
 
     const productsCalculated = PRELOADED_PRODUCTS.map((product) => {
       const input = inputs[product.id];
-      const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
       const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
-      const qtyCredit = input.quantityCredit === "" ? 0 : input.quantityCredit;
-      const discountItems = input.discountItems === "" ? 0 : input.discountItems;
+      const qtySoldDiscount = input.quantitySoldDiscount === "" ? 0 : input.quantitySoldDiscount;
       
-      const qtySold = Math.max(0, qtyGiven - qtyLeft);
-      const qtyCash = Math.max(0, qtySold - qtyCredit);
+      // Validation: Qty left cannot exceed qty given
+      const validQtyLeft = Math.min(qtyLeft, product.quantityGiven);
+      const qtySold = Math.max(0, product.quantityGiven - validQtyLeft);
       
-      // Cash sales value (before discount)
-      const cashSalesValue = qtyCash * product.cashPrice;
+      // Discount only applies if cash price >= 1000
+      const isEligibleForDiscount = product.cashPrice >= 1000;
+      const validQtySoldDiscount = Math.min(qtySoldDiscount, qtySold);
       
-      // Credit sales value
-      const creditSalesValue = qtyCredit * product.creditPrice;
-      
-      // Discount: 10% on cash sales for the discount items
-      const validDiscountItems = Math.min(discountItems, qtyCash);
-      const discountValue = validDiscountItems * product.cashPrice * 0.10;
-      
-      totalCashSalesValue += (cashSalesValue - discountValue);
-      totalCreditDebt += creditSalesValue;
+      const discountValue = isEligibleForDiscount 
+        ? validQtySoldDiscount * product.cashPrice * 0.10 
+        : 0;
+
+      const soldValue = qtySold * product.cashPrice;
+
+      totalSoldQuantity += qtySold;
+      totalSoldValue += soldValue;
       totalDiscountValue += discountValue;
-      totalQuantityRemaining += qtyLeft;
-      totalQuantityGiven += qtyGiven;
+      totalQuantityRemaining += validQtyLeft;
+      totalQuantityGiven += product.quantityGiven;
 
       return {
         ...product,
         qtySold,
-        qtyCash,
-        qtyCredit,
-        cashSalesValue,
-        creditSalesValue,
+        soldValue,
         discountValue,
-        validDiscountItems,
+        isEligibleForDiscount,
+        validQtyLeft,
+        validQtySoldDiscount
       };
     });
 
+    const creditDebt = totalCreditDebt === "" ? 0 : totalCreditDebt;
+    const isCreditDebtInvalid = creditDebt > totalSoldValue;
+    
+    const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt);
+    const cashValueAfterDiscount = cashValueBeforeDiscount - totalDiscountValue;
+
     return {
       productsCalculated,
-      totalCashSalesValue,
-      totalCreditDebt,
+      totalSoldQuantity,
+      totalSoldValue,
       totalDiscountValue,
       totalQuantityRemaining,
       totalQuantityGiven,
-      finalCashRevenue: totalCashSalesValue,
+      creditDebt,
+      isCreditDebtInvalid,
+      cashValueBeforeDiscount,
+      cashValueAfterDiscount
     };
-  }, [inputs]);
+  }, [inputs, totalCreditDebt]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 2 }).format(val);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans text-slate-900">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Pharmacy Accounting</h1>
-            <p className="text-slate-500 mt-1">Track inventory, manage credit sales, and apply discounts.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm">
-              {new Date().toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-            </span>
-          </div>
+        <header className="border-b border-slate-300 pb-6">
+          <h1 className="text-4xl font-bold text-slate-900">Pharmacy Accounting System</h1>
+          <p className="text-slate-600 mt-2">Daily sales tracking with automatic discount and credit calculations</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Date: {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
         </header>
 
-        {/* Top Reports Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <ReportCard 
-            title="Cash Sales (After Discount)" 
-            value={formatCurrency(calculations.totalCashSalesValue)}
-            icon={<DollarSign className="w-4 h-4 text-blue-600" />}
-            colorClass="text-blue-700 bg-blue-50/50 border-blue-100"
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <MetricCard 
+            label="Total Sales Value" 
+            value={formatCurrency(calculations.totalSoldValue)}
+            icon={<DollarSign className="w-5 h-5" />}
+            color="blue"
           />
-          <ReportCard 
-            title="Total Credit Debt" 
-            value={formatCurrency(calculations.totalCreditDebt)}
-            icon={<CreditCard className="w-4 h-4 text-purple-600" />}
-            colorClass="text-purple-700 bg-purple-50/50 border-purple-100"
+          <MetricCard 
+            label="Credit Debt" 
+            value={formatCurrency(calculations.creditDebt)}
+            icon={<CreditCard className="w-5 h-5" />}
+            color="purple"
           />
-          <ReportCard 
-            title="Total Discount (10%)" 
+          <MetricCard 
+            label="Total Discount (10%)" 
             value={formatCurrency(calculations.totalDiscountValue)}
-            icon={<Percent className="w-4 h-4 text-orange-600" />}
-            colorClass="text-orange-700 bg-orange-50/50 border-orange-100"
+            icon={<Percent className="w-5 h-5" />}
+            color="orange"
           />
-          <ReportCard 
-            title="Items Remaining" 
-            value={`${calculations.totalQuantityRemaining}`}
-            subValue={`of ${calculations.totalQuantityGiven} total`}
-            icon={<Package className="w-4 h-4 text-slate-600" />}
-            colorClass="text-slate-700 bg-white border-slate-200"
+          <MetricCard 
+            label="Cash After Discount" 
+            value={formatCurrency(calculations.cashValueAfterDiscount)}
+            icon={<DollarSign className="w-5 h-5" />}
+            color="emerald"
+            highlight
           />
         </div>
 
-        {/* Main Product Table */}
-        <Card className="border shadow-sm overflow-hidden bg-white">
-          <CardHeader className="bg-slate-50/50 border-b pb-4">
-            <CardTitle>Product Sales Entry</CardTitle>
-            <CardDescription className="flex items-start gap-2 mt-2">
-              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600" />
-              <span>Enter Qty Given, Qty Left (unsold), Qty Sold on Credit, and number of items to discount (10% applied automatically)</span>
+        {/* Main Table */}
+        <Card className="shadow-md overflow-hidden">
+          <CardHeader className="bg-slate-100 border-b">
+            <CardTitle className="text-lg">Product Sales Data</CardTitle>
+            <CardDescription className="mt-2 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600" />
+              <span>Enter Quantity Left (unsold) and Quantity Sold on Discount for each product. Discount (10%) applies only to items with cash price ≥ 1000 GHS.</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 hover:bg-slate-50">
-                    <TableHead className="w-[140px] sticky left-0 bg-slate-50">Product Name</TableHead>
-                    <TableHead className="text-center text-xs">Cash<br/>Price</TableHead>
-                    <TableHead className="text-center text-xs">Credit<br/>Price</TableHead>
-                    <TableHead className="w-[80px] bg-purple-50/30 text-purple-900 border-l border-purple-100">
-                      Qty<br/>Given
-                    </TableHead>
-                    <TableHead className="w-[80px] bg-amber-50/30 text-amber-900 border-l border-amber-100">
-                      Qty<br/>Left
-                    </TableHead>
-                    <TableHead className="text-center text-xs">Qty<br/>Sold</TableHead>
-                    <TableHead className="w-[80px] bg-indigo-50/30 text-indigo-900 border-l border-indigo-100">
-                      Qty Credit<br/>Sold
-                    </TableHead>
-                    <TableHead className="text-center text-xs">Cash<br/>Qty</TableHead>
-                    <TableHead className="text-right text-xs">Cash<br/>Value</TableHead>
-                    <TableHead className="text-right text-xs">Credit<br/>Value</TableHead>
-                    <TableHead className="w-[80px] bg-orange-50/30 text-orange-900 border-l border-orange-100">
-                      Items to<br/>Discount
-                    </TableHead>
-                    <TableHead className="text-right text-xs">Discount<br/>10%</TableHead>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="w-[180px]">Product Name</TableHead>
+                    <TableHead className="text-right">Cash Price (GHS)</TableHead>
+                    <TableHead className="text-right">Credit Price (GHS)</TableHead>
+                    <TableHead className="text-center">Qty Given</TableHead>
+                    <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
+                    <TableHead className="text-center">Qty Sold</TableHead>
+                    <TableHead className="text-right">Total Value</TableHead>
+                    <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200">Qty Discount</TableHead>
+                    <TableHead className="text-right">Discount Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {calculations.productsCalculated.map((product) => (
-                    <TableRow key={product.id} className="hover:bg-slate-50">
-                      <TableCell className="font-medium text-slate-700 sticky left-0 bg-white hover:bg-slate-50">
+                    <TableRow key={product.id} className="border-b hover:bg-slate-50">
+                      <TableCell className="font-semibold text-slate-900">
                         {product.name}
+                        {product.isEligibleForDiscount && (
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">Eligible</Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers text-sm text-slate-600">
+                      <TableCell className="text-right font-mono-numbers">
                         {product.cashPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers text-sm text-slate-600">
+                      <TableCell className="text-right font-mono-numbers text-slate-600">
                         {product.creditPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="bg-purple-50/10 border-l border-purple-100/50 p-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="h-7 font-mono-numbers text-center text-sm bg-white border-purple-200 focus-visible:ring-purple-500"
-                          value={inputs[product.id]?.quantityGiven}
-                          onChange={(e) => handleInputChange(product.id, "quantityGiven", e.target.value)}
-                          data-testid={`input-qty-given-${product.id}`}
-                        />
+                      <TableCell className="text-center font-mono-numbers">
+                        {product.quantityGiven}
                       </TableCell>
-                      <TableCell className="bg-amber-50/10 border-l border-amber-100/50 p-1">
+                      <TableCell className="bg-red-50 border-l border-red-200 p-2">
                         <Input
                           type="number"
                           min="0"
+                          max={product.quantityGiven}
                           placeholder="0"
-                          className="h-7 font-mono-numbers text-center text-sm bg-white border-amber-200 focus-visible:ring-amber-500"
+                          className="h-8 text-center font-mono-numbers text-sm bg-white border-red-200"
                           value={inputs[product.id]?.quantityLeft}
                           onChange={(e) => handleInputChange(product.id, "quantityLeft", e.target.value)}
                           data-testid={`input-qty-left-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers text-sm font-medium text-slate-700">
+                      <TableCell className="text-center font-mono-numbers font-medium">
                         {product.qtySold}
                       </TableCell>
-                      <TableCell className="bg-indigo-50/10 border-l border-indigo-100/50 p-1">
+                      <TableCell className="text-right font-mono-numbers">
+                        {formatCurrency(product.soldValue)}
+                      </TableCell>
+                      <TableCell className="bg-yellow-50 border-l border-yellow-200 p-2">
                         <Input
                           type="number"
                           min="0"
+                          max={product.qtySold}
                           placeholder="0"
-                          className="h-7 font-mono-numbers text-center text-sm bg-white border-indigo-200 focus-visible:ring-indigo-500"
-                          value={inputs[product.id]?.quantityCredit}
-                          onChange={(e) => handleInputChange(product.id, "quantityCredit", e.target.value)}
-                          data-testid={`input-qty-credit-${product.id}`}
+                          disabled={!product.isEligibleForDiscount}
+                          className={`h-8 text-center font-mono-numbers text-sm bg-white border-yellow-200 ${!product.isEligibleForDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          value={inputs[product.id]?.quantitySoldDiscount}
+                          onChange={(e) => handleInputChange(product.id, "quantitySoldDiscount", e.target.value)}
+                          data-testid={`input-qty-discount-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers text-sm text-slate-700">
-                        {product.qtyCash}
-                      </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-sm text-slate-600">
-                        {formatCurrency(product.cashSalesValue)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-sm text-slate-600">
-                        {formatCurrency(product.creditSalesValue)}
-                      </TableCell>
-                      <TableCell className="bg-orange-50/10 border-l border-orange-100/50 p-1">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          className="h-7 font-mono-numbers text-center text-sm bg-white border-orange-200 focus-visible:ring-orange-500"
-                          value={inputs[product.id]?.discountItems}
-                          onChange={(e) => handleInputChange(product.id, "discountItems", e.target.value)}
-                          data-testid={`input-discount-items-${product.id}`}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-sm text-orange-600 font-medium">
+                      <TableCell className="text-right font-mono-numbers font-medium text-orange-600">
                         {formatCurrency(product.discountValue)}
                       </TableCell>
                     </TableRow>
@@ -261,60 +230,105 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Summary Card */}
-        <Card className="border shadow-sm bg-slate-900 text-slate-50">
-          <CardHeader>
-            <CardTitle className="text-slate-100">Daily Revenue Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Total Discount (10%)</span>
-                  <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountValue)}</span>
-                </div>
-                <Separator className="bg-slate-700" />
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-200">Cash Revenue</span>
-                  <span className="font-mono-numbers text-blue-300">{formatCurrency(calculations.totalCashSalesValue)}</span>
-                </div>
+        {/* Credit Debt Input & Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Credit Debt Input */}
+          <Card className="shadow-md">
+            <CardHeader className="bg-purple-50 border-b">
+              <CardTitle className="text-base">Total Credit Debt</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <Label htmlFor="credit-debt" className="text-sm font-medium">Enter total value of products sold on credit (GHS)</Label>
+              <div className="relative mt-3">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
+                <Input 
+                  id="credit-debt"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  className={`pl-12 font-mono-numbers text-lg h-10 ${
+                    calculations.isCreditDebtInvalid ? "border-red-400 bg-red-50" : "border-purple-300"
+                  }`}
+                  value={totalCreditDebt}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    setTotalCreditDebt(val);
+                  }}
+                  data-testid="input-credit-debt"
+                />
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Total Credit Debt</span>
-                  <span className="font-mono-numbers text-purple-300">{formatCurrency(calculations.totalCreditDebt)}</span>
-                </div>
-                <Separator className="bg-slate-700" />
-                <div className="pt-2 border-t border-slate-700">
-                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Total Outstanding</div>
-                  <div className="text-2xl font-bold font-mono-numbers text-slate-100 tracking-tight">
-                    {formatCurrency(calculations.totalCreditDebt)}
-                  </div>
-                </div>
+              {calculations.isCreditDebtInvalid && (
+                <p className="text-xs text-red-600 font-medium mt-2">
+                  ⚠ Credit debt cannot exceed total sales ({formatCurrency(calculations.totalSoldValue)})
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Summary */}
+          <Card className="lg:col-span-2 shadow-md bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+            <CardHeader>
+              <CardTitle className="text-white">Daily Revenue Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-300">Total Sold Value</span>
+                <span className="font-mono-numbers font-semibold">{formatCurrency(calculations.totalSoldValue)}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Less: Total Credit Debt</span>
+                <span className="font-mono-numbers text-red-300">- {formatCurrency(calculations.creditDebt)}</span>
+              </div>
+              <Separator className="bg-slate-700" />
+              <div className="flex justify-between font-medium">
+                <span className="text-slate-100">Cash Value Before Discount</span>
+                <span className="font-mono-numbers">{formatCurrency(calculations.cashValueBeforeDiscount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Less: Total Discount (10%)</span>
+                <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountValue)}</span>
+              </div>
+              <Separator className="bg-slate-700" />
+              <div className="pt-2">
+                <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Final Cash Revenue</p>
+                <p className="text-3xl font-bold font-mono-numbers text-emerald-400">
+                  {formatCurrency(calculations.cashValueAfterDiscount)}
+                </p>
+              </div>
+              <Separator className="bg-slate-700" />
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-400">Inventory Remaining</span>
+                <span className="font-mono-numbers">{calculations.totalQuantityRemaining} / {calculations.totalQuantityGiven} units</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 }
 
-function ReportCard({ title, value, subValue, icon, colorClass, highlight = false }: any) {
+function MetricCard({ label, value, icon, color, highlight = false }: any) {
+  const colorClasses = {
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
+    purple: "bg-purple-50 text-purple-700 border-purple-200",
+    orange: "bg-orange-50 text-orange-700 border-orange-200",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`relative overflow-hidden rounded-xl border p-4 shadow-sm ${colorClass} ${highlight ? 'ring-2 ring-emerald-500/30' : ''}`}
+      className={`border rounded-lg p-4 ${colorClasses[color as keyof typeof colorClasses]} ${highlight ? 'ring-2 ring-offset-2 ring-emerald-500' : ''}`}
     >
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{title}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-75">{label}</p>
+          <p className="text-2xl font-bold font-mono-numbers mt-1 tracking-tight">{value}</p>
+        </div>
         {icon}
-      </div>
-      <div className="flex items-baseline gap-2">
-        <h3 className="text-xl font-bold font-mono-numbers tracking-tight">{value}</h3>
-        {subValue && <span className="text-sm opacity-70">{subValue}</span>}
       </div>
     </motion.div>
   );
