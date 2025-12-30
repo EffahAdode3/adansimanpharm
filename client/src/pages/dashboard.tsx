@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { DollarSign, CreditCard, Percent, AlertCircle } from "lucide-react";
 
 type ProductInput = {
+  quantityGiven: number | "";
   quantityLeft: number | "";
   quantitySoldDiscount: number | "";
 };
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const [inputs, setInputs] = useState<InputsMap>(() => {
     const initial: InputsMap = {};
     PRELOADED_PRODUCTS.forEach((p) => {
-      initial[p.id] = { quantityLeft: "", quantitySoldDiscount: "" };
+      initial[p.id] = { quantityGiven: "", quantityLeft: "", quantitySoldDiscount: "" };
     });
     return initial;
   });
@@ -46,12 +47,13 @@ export default function Dashboard() {
 
     const productsCalculated = PRELOADED_PRODUCTS.map((product) => {
       const input = inputs[product.id];
+      const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
       const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
       const qtySoldDiscount = input.quantitySoldDiscount === "" ? 0 : input.quantitySoldDiscount;
       
       // Validation: Qty left cannot exceed qty given
-      const validQtyLeft = Math.min(qtyLeft, product.quantityGiven);
-      const qtySold = Math.max(0, product.quantityGiven - validQtyLeft);
+      const validQtyLeft = Math.min(qtyLeft, qtyGiven);
+      const qtySold = Math.max(0, qtyGiven - validQtyLeft);
       
       // Discount only applies if cash price >= 1000
       const isEligibleForDiscount = product.cashPrice >= 1000;
@@ -67,7 +69,7 @@ export default function Dashboard() {
       totalSoldValue += soldValue;
       totalDiscountValue += discountValue;
       totalQuantityRemaining += validQtyLeft;
-      totalQuantityGiven += product.quantityGiven;
+      totalQuantityGiven += qtyGiven;
 
       return {
         ...product,
@@ -151,7 +153,7 @@ export default function Dashboard() {
             <CardTitle className="text-lg">Product Sales Data</CardTitle>
             <CardDescription className="mt-2 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600" />
-              <span>Enter Quantity Left (unsold) and Quantity Sold on Discount for each product. Discount (10%) applies only to items with cash price ≥ 1000 GHS.</span>
+              <span>Enter Quantity Given, Quantity Left (unsold), and Quantity Sold on Discount for each product. Discount (10%) applies only to items with cash price ≥ 1000 GHS.</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -162,7 +164,7 @@ export default function Dashboard() {
                     <TableHead className="w-[180px]">Product Name</TableHead>
                     <TableHead className="text-right">Cash Price (GHS)</TableHead>
                     <TableHead className="text-right">Credit Price (GHS)</TableHead>
-                    <TableHead className="text-center">Qty Given</TableHead>
+                    <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200">Qty Given</TableHead>
                     <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
                     <TableHead className="text-center">Qty Sold</TableHead>
                     <TableHead className="text-right">Total Value</TableHead>
@@ -185,14 +187,21 @@ export default function Dashboard() {
                       <TableCell className="text-right font-mono-numbers text-slate-600">
                         {product.creditPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers">
-                        {product.quantityGiven}
+                      <TableCell className="bg-purple-50 border-l border-purple-200 p-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          className="h-8 text-center font-mono-numbers text-sm bg-white border-purple-200"
+                          value={inputs[product.id]?.quantityGiven}
+                          onChange={(e) => handleInputChange(product.id, "quantityGiven", e.target.value)}
+                          data-testid={`input-qty-given-${product.id}`}
+                        />
                       </TableCell>
                       <TableCell className="bg-red-50 border-l border-red-200 p-2">
                         <Input
                           type="number"
                           min="0"
-                          max={product.quantityGiven}
                           placeholder="0"
                           className="h-8 text-center font-mono-numbers text-sm bg-white border-red-200"
                           value={inputs[product.id]?.quantityLeft}
@@ -210,7 +219,6 @@ export default function Dashboard() {
                         <Input
                           type="number"
                           min="0"
-                          max={product.qtySold}
                           placeholder="0"
                           disabled={!product.isEligibleForDiscount}
                           className={`h-8 text-center font-mono-numbers text-sm bg-white border-yellow-200 ${!product.isEligibleForDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
