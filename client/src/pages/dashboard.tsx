@@ -63,12 +63,15 @@ export default function Dashboard() {
       
       // Calculate values: Normal uses CREDIT PRICE, Discounted uses CASH PRICE
       const normalValue = qtyNormal * product.creditPrice;
-      const discountedValue = isEligibleForDiscount ? qtyDiscount * product.cashPrice : 0;
+      const discountedValue = qtyDiscount * product.cashPrice;  // Show for all products
       const totalProductValue = normalValue + discountedValue;
 
       totalSoldQuantity += qtySold;
       totalSoldValue += totalProductValue;
-      totalDiscountedValue += discountedValue;
+      // Only add to discounted value if eligible for discount
+      if (isEligibleForDiscount) {
+        totalDiscountedValue += discountedValue;
+      }
       totalQuantityRemaining += validQtyLeft;
       totalQuantityGiven += qtyGiven;
 
