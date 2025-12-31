@@ -88,14 +88,14 @@ export default function Dashboard() {
     const creditDebt = totalCreditDebt === "" ? 0 : totalCreditDebt;
     const isCreditDebtInvalid = creditDebt > totalSoldValue;
     
-    // Calculate cash before discount (total sold value - credit debt)
+    // Calculate cash before discount (total normal sales - credit debt)
     const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt);
     
     // Apply 10% discount ONLY on the total discounted value
     const totalDiscountAmount = totalDiscountedValue * 0.10;
     
-    // Cash after discount = cash before discount - total discount
-    const cashValueAfterDiscount = cashValueBeforeDiscount - totalDiscountAmount;
+    // Cash after discount = cash before discount + (total discounted value - total discount amount)
+    const cashValueAfterDiscount = cashValueBeforeDiscount + (totalDiscountedValue - totalDiscountAmount);
 
     return {
       productsCalculated,
