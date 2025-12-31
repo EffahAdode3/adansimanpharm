@@ -63,7 +63,7 @@ export default function Dashboard() {
       
       // Calculate values: Normal uses CREDIT PRICE, Discounted uses CASH PRICE
       const normalValue = qtyNormal * product.creditPrice;
-      const discountedValue = qtyDiscount * product.cashPrice;  // Show for all products
+      const discountedValue = qtyDiscount * product.cashPrice; // Calculate: Qty Discount * Cash Price
       const totalProductValue = normalValue + discountedValue;
 
       totalSoldQuantity += qtySold;
