@@ -41,7 +41,7 @@ export default function Dashboard() {
   const calculations = useMemo(() => {
     let totalSoldQuantity = 0;
     let totalSoldValue = 0;
-    let totalDiscountValue = 0;
+    let totalDiscountedValue = 0;
     let totalQuantityRemaining = 0;
     let totalQuantityGiven = 0;
 
@@ -53,31 +53,33 @@ export default function Dashboard() {
       
       // Validation: Qty left cannot exceed qty given
       const validQtyLeft = Math.min(qtyLeft, qtyGiven);
-      const qtySoldBeforeDiscount = Math.max(0, qtyGiven - validQtyLeft);
       
-      // Apply discount reduction: actual qty sold is reduced by discount quantity
-      const qtySoldAfterDiscount = Math.max(0, qtySoldBeforeDiscount - qtyDiscount);
-
-      // Sold value calculated on the quantity after discount reduction
-      const soldValue = qtySoldAfterDiscount * product.creditPrice;
+      // Calculate quantities
+      const qtySold = Math.max(0, qtyGiven - validQtyLeft);
+      const qtyNormal = Math.max(0, qtySold - qtyDiscount);
       
-      // Discount amount: 10% of the total sold value (only if eligible)
+      // Check eligibility for discount (cash price >= 1000)
       const isEligibleForDiscount = product.cashPrice >= 1000;
-      const discountValue = isEligibleForDiscount ? soldValue * 0.10 : 0;
+      
+      // Calculate values using CASH PRICE
+      const normalValue = qtyNormal * product.cashPrice;
+      const discountedValue = isEligibleForDiscount ? qtyDiscount * product.cashPrice : 0;
+      const totalProductValue = normalValue + discountedValue;
 
-      totalSoldQuantity += qtySoldAfterDiscount;
-      totalSoldValue += soldValue;
-      totalDiscountValue += discountValue;
+      totalSoldQuantity += qtySold;
+      totalSoldValue += totalProductValue;
+      totalDiscountedValue += discountedValue;
       totalQuantityRemaining += validQtyLeft;
       totalQuantityGiven += qtyGiven;
 
       return {
         ...product,
-        qtySoldBeforeDiscount,
-        qtySoldAfterDiscount,
+        qtySold,
+        qtyNormal,
         qtyDiscount,
-        soldValue,
-        discountValue,
+        normalValue,
+        discountedValue,
+        totalProductValue,
         isEligibleForDiscount,
         validQtyLeft
       };
@@ -86,14 +88,21 @@ export default function Dashboard() {
     const creditDebt = totalCreditDebt === "" ? 0 : totalCreditDebt;
     const isCreditDebtInvalid = creditDebt > totalSoldValue;
     
+    // Calculate cash before discount (total sold value - credit debt)
     const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt);
-    const cashValueAfterDiscount = cashValueBeforeDiscount - totalDiscountValue;
+    
+    // Apply 10% discount ONLY on the total discounted value
+    const totalDiscountAmount = totalDiscountedValue * 0.10;
+    
+    // Cash after discount = cash before discount - total discount
+    const cashValueAfterDiscount = cashValueBeforeDiscount - totalDiscountAmount;
 
     return {
       productsCalculated,
       totalSoldQuantity,
       totalSoldValue,
-      totalDiscountValue,
+      totalDiscountedValue,
+      totalDiscountAmount,
       totalQuantityRemaining,
       totalQuantityGiven,
       creditDebt,
@@ -135,7 +144,7 @@ export default function Dashboard() {
           />
           <MetricCard 
             label="Total Discount (10%)" 
-            value={formatCurrency(calculations.totalDiscountValue)}
+            value={formatCurrency(calculations.totalDiscountAmount)}
             icon={<Percent className="w-5 h-5" />}
             color="orange"
           />
@@ -154,7 +163,10 @@ export default function Dashboard() {
             <CardTitle className="text-lg">Product Sales Data</CardTitle>
             <CardDescription className="mt-2 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-600" />
-              <span>Enter Quantity Given, Quantity Left (unsold), and Quantity Sold on Discount for each product. Discount (10%) applies only to items with cash price ≥ 1000 GHS.</span>
+              <span>
+                <strong>User inputs per product:</strong> Quantity Given, Quantity Left (unsold), and Quantity on Discount.<br/>
+                <strong>Calculations:</strong> Qty Sold = Qty Given - Qty Left. Values use Cash Price. Discount (10%) applies only to discounted items with cash price ≥ 1000 GHS. Discount is calculated on total discounted value.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -164,14 +176,14 @@ export default function Dashboard() {
                   <TableRow className="bg-slate-50">
                     <TableHead className="w-[180px]">Product Name</TableHead>
                     <TableHead className="text-right">Cash Price (GHS)</TableHead>
-                    <TableHead className="text-right">Credit Price (GHS)</TableHead>
                     <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200">Qty Given</TableHead>
                     <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
                     <TableHead className="text-center">Qty Sold</TableHead>
+                    <TableHead className="text-center">Qty Normal</TableHead>
                     <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200">Qty Discount</TableHead>
-                    <TableHead className="text-center">Final Qty</TableHead>
-                    <TableHead className="text-right">Value (10% Off)</TableHead>
-                    <TableHead className="text-right">Discount (10%)</TableHead>
+                    <TableHead className="text-right">Normal Value</TableHead>
+                    <TableHead className="text-right">Discount Value</TableHead>
+                    <TableHead className="text-right">Total Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -180,14 +192,11 @@ export default function Dashboard() {
                       <TableCell className="font-semibold text-slate-900">
                         {product.name}
                         {product.isEligibleForDiscount && (
-                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">10% Off</Badge>
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">Eligible</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers">
+                      <TableCell className="text-right font-mono-numbers font-medium">
                         {product.cashPrice.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-slate-600">
-                        {product.creditPrice.toFixed(2)}
                       </TableCell>
                       <TableCell className="bg-purple-50 border-l border-purple-200 p-2">
                         <Input
@@ -212,7 +221,10 @@ export default function Dashboard() {
                         />
                       </TableCell>
                       <TableCell className="text-center font-mono-numbers font-medium">
-                        {product.qtySoldBeforeDiscount}
+                        {product.qtySold}
+                      </TableCell>
+                      <TableCell className="text-center font-mono-numbers text-slate-700">
+                        {product.qtyNormal}
                       </TableCell>
                       <TableCell className="bg-yellow-50 border-l border-yellow-200 p-2">
                         <Input
@@ -225,14 +237,14 @@ export default function Dashboard() {
                           data-testid={`input-qty-discount-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers font-medium text-slate-700">
-                        {product.qtySoldAfterDiscount}
+                      <TableCell className="text-right font-mono-numbers text-slate-700">
+                        {formatCurrency(product.normalValue)}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers">
-                        {formatCurrency(product.soldValue)}
+                      <TableCell className="text-right font-mono-numbers text-orange-600 font-medium">
+                        {formatCurrency(product.discountedValue)}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers font-medium text-orange-600">
-                        {formatCurrency(product.discountValue)}
+                      <TableCell className="text-right font-mono-numbers font-medium text-slate-900">
+                        {formatCurrency(product.totalProductValue)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -285,7 +297,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-300">Total Sold Value</span>
+                <span className="text-slate-300">Total Sales Value (Cash Price)</span>
                 <span className="font-mono-numbers font-semibold">{formatCurrency(calculations.totalSoldValue)}</span>
               </div>
               <div className="flex justify-between">
@@ -294,12 +306,16 @@ export default function Dashboard() {
               </div>
               <Separator className="bg-slate-700" />
               <div className="flex justify-between font-medium">
-                <span className="text-slate-100">Cash Value Before Discount</span>
+                <span className="text-slate-100">Cash Sales Before Discount</span>
                 <span className="font-mono-numbers">{formatCurrency(calculations.cashValueBeforeDiscount)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-300">Less: Total Discount (10%)</span>
-                <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountValue)}</span>
+              <div className="pt-2">
+                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">10% Discount Applied to:</p>
+                <p className="text-sm font-mono-numbers text-orange-300 ml-4">Total Discounted Value: {formatCurrency(calculations.totalDiscountedValue)}</p>
+              </div>
+              <div className="flex justify-between pt-2">
+                <span className="text-slate-300">Less: Total Discount Amount (10%)</span>
+                <span className="font-mono-numbers text-orange-300">- {formatCurrency(calculations.totalDiscountAmount)}</span>
               </div>
               <Separator className="bg-slate-700" />
               <div className="pt-2">
