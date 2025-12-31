@@ -61,8 +61,8 @@ export default function Dashboard() {
       // Check eligibility for discount (cash price >= 1000)
       const isEligibleForDiscount = product.cashPrice >= 1000;
       
-      // Calculate values using CASH PRICE
-      const normalValue = qtyNormal * product.cashPrice;
+      // Calculate values: Normal uses CREDIT PRICE, Discounted uses CASH PRICE
+      const normalValue = qtyNormal * product.creditPrice;
       const discountedValue = isEligibleForDiscount ? qtyDiscount * product.cashPrice : 0;
       const totalProductValue = normalValue + discountedValue;
 
