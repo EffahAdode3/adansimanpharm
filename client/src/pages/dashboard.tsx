@@ -176,6 +176,7 @@ export default function Dashboard() {
                   <TableRow className="bg-slate-50">
                     <TableHead className="w-[180px]">Product Name</TableHead>
                     <TableHead className="text-right">Cash Price (GHS)</TableHead>
+                    <TableHead className="text-right text-slate-600">Credit Price (GHS)</TableHead>
                     <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200">Qty Given</TableHead>
                     <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
                     <TableHead className="text-center">Qty Sold</TableHead>
@@ -197,6 +198,9 @@ export default function Dashboard() {
                       </TableCell>
                       <TableCell className="text-right font-mono-numbers font-medium">
                         {product.cashPrice.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono-numbers text-slate-600 text-sm">
+                        {product.creditPrice.toFixed(2)}
                       </TableCell>
                       <TableCell className="bg-purple-50 border-l border-purple-200 p-2">
                         <Input
