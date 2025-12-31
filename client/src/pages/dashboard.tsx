@@ -67,11 +67,8 @@ export default function Dashboard() {
       const totalProductValue = normalValue + discountedValue;
 
       totalSoldQuantity += qtySold;
-      totalSoldValue += totalProductValue;
-      // Only add to discounted value if eligible for discount
-      if (isEligibleForDiscount) {
-        totalDiscountedValue += discountedValue;
-      }
+      totalSoldValue += normalValue;  // Only add normal value (credit price based)
+      totalDiscountedValue += discountedValue;  // Track all discounted values
       totalQuantityRemaining += validQtyLeft;
       totalQuantityGiven += qtyGiven;
 
