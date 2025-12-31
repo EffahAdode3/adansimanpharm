@@ -49,23 +49,23 @@ export default function Dashboard() {
       const input = inputs[product.id];
       const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
       const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
-      const qtySoldDiscount = input.quantitySoldDiscount === "" ? 0 : input.quantitySoldDiscount;
+      const qtyDiscount = input.quantitySoldDiscount === "" ? 0 : input.quantitySoldDiscount;
       
       // Validation: Qty left cannot exceed qty given
       const validQtyLeft = Math.min(qtyLeft, qtyGiven);
-      const qtySold = Math.max(0, qtyGiven - validQtyLeft);
+      const qtySoldBeforeDiscount = Math.max(0, qtyGiven - validQtyLeft);
       
-      // Discount only applies if cash price >= 1000
+      // Apply discount reduction: actual qty sold is reduced by discount quantity
+      const qtySoldAfterDiscount = Math.max(0, qtySoldBeforeDiscount - qtyDiscount);
+
+      // Sold value calculated on the quantity after discount reduction
+      const soldValue = qtySoldAfterDiscount * product.creditPrice;
+      
+      // Discount amount: 10% of the total sold value (only if eligible)
       const isEligibleForDiscount = product.cashPrice >= 1000;
-      const validQtySoldDiscount = Math.min(qtySoldDiscount, qtySold);
-      
-      const discountValue = isEligibleForDiscount 
-        ? validQtySoldDiscount * product.cashPrice * 0.10 
-        : 0;
+      const discountValue = isEligibleForDiscount ? soldValue * 0.10 : 0;
 
-      const soldValue = qtySold * product.creditPrice;
-
-      totalSoldQuantity += qtySold;
+      totalSoldQuantity += qtySoldAfterDiscount;
       totalSoldValue += soldValue;
       totalDiscountValue += discountValue;
       totalQuantityRemaining += validQtyLeft;
@@ -73,12 +73,13 @@ export default function Dashboard() {
 
       return {
         ...product,
-        qtySold,
+        qtySoldBeforeDiscount,
+        qtySoldAfterDiscount,
+        qtyDiscount,
         soldValue,
         discountValue,
         isEligibleForDiscount,
-        validQtyLeft,
-        validQtySoldDiscount
+        validQtyLeft
       };
     });
 
@@ -167,9 +168,10 @@ export default function Dashboard() {
                     <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200">Qty Given</TableHead>
                     <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
                     <TableHead className="text-center">Qty Sold</TableHead>
-                    <TableHead className="text-right">Total Value</TableHead>
                     <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200">Qty Discount</TableHead>
-                    <TableHead className="text-right">Discount Value</TableHead>
+                    <TableHead className="text-center">Final Qty</TableHead>
+                    <TableHead className="text-right">Value (10% Off)</TableHead>
+                    <TableHead className="text-right">Discount (10%)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -178,7 +180,7 @@ export default function Dashboard() {
                       <TableCell className="font-semibold text-slate-900">
                         {product.name}
                         {product.isEligibleForDiscount && (
-                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">Eligible</Badge>
+                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">10% Off</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono-numbers">
@@ -210,22 +212,24 @@ export default function Dashboard() {
                         />
                       </TableCell>
                       <TableCell className="text-center font-mono-numbers font-medium">
-                        {product.qtySold}
-                      </TableCell>
-                      <TableCell className="text-right font-mono-numbers">
-                        {formatCurrency(product.soldValue)}
+                        {product.qtySoldBeforeDiscount}
                       </TableCell>
                       <TableCell className="bg-yellow-50 border-l border-yellow-200 p-2">
                         <Input
                           type="number"
                           min="0"
                           placeholder="0"
-                          disabled={!product.isEligibleForDiscount}
-                          className={`h-8 text-center font-mono-numbers text-sm bg-white border-yellow-200 ${!product.isEligibleForDiscount ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className="h-8 text-center font-mono-numbers text-sm bg-white border-yellow-200"
                           value={inputs[product.id]?.quantitySoldDiscount}
                           onChange={(e) => handleInputChange(product.id, "quantitySoldDiscount", e.target.value)}
                           data-testid={`input-qty-discount-${product.id}`}
                         />
+                      </TableCell>
+                      <TableCell className="text-center font-mono-numbers font-medium text-slate-700">
+                        {product.qtySoldAfterDiscount}
+                      </TableCell>
+                      <TableCell className="text-right font-mono-numbers">
+                        {formatCurrency(product.soldValue)}
                       </TableCell>
                       <TableCell className="text-right font-mono-numbers font-medium text-orange-600">
                         {formatCurrency(product.discountValue)}
