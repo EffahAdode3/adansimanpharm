@@ -27,6 +27,7 @@ export default function Dashboard() {
   });
 
   const [totalCreditDebt, setTotalCreditDebt] = useState<number | "">("");
+  const [totalDifferences, setTotalDifferences] = useState<number | "">("");
 
   const handleInputChange = (id: string, field: keyof ProductInput, value: string) => {
     const numValue = value === "" ? "" : parseFloat(value);
@@ -86,10 +87,11 @@ export default function Dashboard() {
     });
 
     const creditDebt = totalCreditDebt === "" ? 0 : totalCreditDebt;
+    const differences = totalDifferences === "" ? 0 : totalDifferences;
     const isCreditDebtInvalid = creditDebt > totalSoldValue;
     
-    // Calculate cash before discount (total normal sales - credit debt)
-    const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt);
+    // Calculate cash before discount (total normal sales - credit debt - differences)
+    const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt - differences);
     
     // Apply 10% discount ONLY on the total discounted value
     const totalDiscountAmount = totalDiscountedValue * 0.10;
@@ -106,11 +108,12 @@ export default function Dashboard() {
       totalQuantityRemaining,
       totalQuantityGiven,
       creditDebt,
+      differences,
       isCreditDebtInvalid,
       cashValueBeforeDiscount,
       cashValueAfterDiscount
     };
-  }, [inputs, totalCreditDebt]);
+  }, [inputs, totalCreditDebt, totalDifferences]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 2 }).format(val);
@@ -258,41 +261,69 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Credit Debt Input & Summary */}
+        {/* Credit Debt, Differences & Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Credit Debt Input */}
-          <Card className="shadow-md">
-            <CardHeader className="bg-purple-50 border-b">
-              <CardTitle className="text-base">Total Credit Debt</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <Label htmlFor="credit-debt" className="text-sm font-medium">Enter total value of products sold on credit (GHS)</Label>
-              <div className="relative mt-3">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
-                <Input 
-                  id="credit-debt"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  className={`pl-12 font-mono-numbers text-lg h-10 ${
-                    calculations.isCreditDebtInvalid ? "border-red-400 bg-red-50" : "border-purple-300"
-                  }`}
-                  value={totalCreditDebt}
-                  onChange={(e) => {
-                    const val = e.target.value === "" ? "" : parseFloat(e.target.value);
-                    setTotalCreditDebt(val);
-                  }}
-                  data-testid="input-credit-debt"
-                />
-              </div>
-              {calculations.isCreditDebtInvalid && (
-                <p className="text-xs text-red-600 font-medium mt-2">
-                  ⚠ Credit debt cannot exceed total sales ({formatCurrency(calculations.totalSoldValue)})
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Inputs Section */}
+          <div className="space-y-6">
+            <Card className="shadow-md">
+              <CardHeader className="bg-purple-50 border-b">
+                <CardTitle className="text-base">Total Credit Debt</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Label htmlFor="credit-debt" className="text-sm font-medium">Value of products sold on credit (GHS)</Label>
+                <div className="relative mt-3">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
+                  <Input 
+                    id="credit-debt"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    className={`pl-12 font-mono-numbers text-lg h-10 ${
+                      calculations.isCreditDebtInvalid ? "border-red-400 bg-red-50" : "border-purple-300"
+                    }`}
+                    value={totalCreditDebt}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                      setTotalCreditDebt(val);
+                    }}
+                    data-testid="input-credit-debt"
+                  />
+                </div>
+                {calculations.isCreditDebtInvalid && (
+                  <p className="text-xs text-red-600 font-medium mt-2">
+                    ⚠ Credit debt cannot exceed total sales ({formatCurrency(calculations.totalSoldValue)})
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-md">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-base">Total Differences</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <Label htmlFor="differences" className="text-sm font-medium">Enter total differences (GHS)</Label>
+                <div className="relative mt-3">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
+                  <Input 
+                    id="differences"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-12 font-mono-numbers text-lg h-10 border-blue-300"
+                    value={totalDifferences}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                      setTotalDifferences(val);
+                    }}
+                    data-testid="input-differences"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Summary */}
           <Card className="lg:col-span-2 shadow-md bg-gradient-to-br from-slate-900 to-slate-800 text-white">
@@ -307,6 +338,10 @@ export default function Dashboard() {
               <div className="flex justify-between">
                 <span className="text-slate-300">Less: Total Credit Debt</span>
                 <span className="font-mono-numbers text-red-300">- {formatCurrency(calculations.creditDebt)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-300">Less: Total Differences</span>
+                <span className="font-mono-numbers text-blue-300">- {formatCurrency(calculations.differences)}</span>
               </div>
               <Separator className="bg-slate-700" />
               <div className="flex justify-between font-medium">
