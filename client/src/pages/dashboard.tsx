@@ -30,8 +30,12 @@ export default function Dashboard() {
   const [totalDifferences, setTotalDifferences] = useState<number | "">("");
 
   const handleInputChange = (id: string, field: keyof ProductInput, value: string) => {
-    const numValue = value === "" ? "" : parseFloat(value);
-    if (typeof numValue === "number" && numValue < 0) return;
+    // Basic sanitization: only allow digits and decimals
+    const sanitizedValue = value.replace(/[^0-9.]/g, "");
+    const numValue = sanitizedValue === "" ? "" : parseFloat(sanitizedValue);
+    
+    // Safety check for NaN or negative numbers
+    if (sanitizedValue !== "" && (isNaN(Number(numValue)) || Number(numValue) < 0)) return;
     
     setInputs((prev) => ({
       ...prev,
@@ -173,85 +177,90 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300">
+              <Table className="min-w-[1000px] lg:min-w-full">
                 <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="w-[180px]">Product Name</TableHead>
-                    <TableHead className="text-right">Cash Price (GHS)</TableHead>
-                    <TableHead className="text-right text-slate-600">Credit Price (GHS)</TableHead>
-                    <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200">Qty Given</TableHead>
-                    <TableHead className="bg-red-50 text-red-900 border-l border-red-200">Qty Left</TableHead>
-                    <TableHead className="text-center">Qty Sold</TableHead>
-                    <TableHead className="text-center">Qty Normal</TableHead>
-                    <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200">Qty Discount</TableHead>
-                    <TableHead className="text-right">Normal Value</TableHead>
-                    <TableHead className="text-right">Discount Value</TableHead>
-                    <TableHead className="text-right">Total Value</TableHead>
+                  <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="sticky left-0 z-10 bg-slate-50 w-[200px] min-w-[200px] font-bold text-slate-900 border-r">Product Name</TableHead>
+                    <TableHead className="text-right whitespace-nowrap px-4 font-bold text-slate-700">Cash Price</TableHead>
+                    <TableHead className="text-right whitespace-nowrap px-4 font-bold text-slate-400">Credit Price</TableHead>
+                    <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200 text-center font-bold px-4">Qty Given</TableHead>
+                    <TableHead className="bg-red-50 text-red-900 border-l border-red-200 text-center font-bold px-4">Qty Left</TableHead>
+                    <TableHead className="text-center font-bold px-4">Qty Sold</TableHead>
+                    <TableHead className="text-center font-bold px-4">Qty Normal</TableHead>
+                    <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200 text-center font-bold px-4">Qty Discount</TableHead>
+                    <TableHead className="text-right font-bold px-4">Normal Val</TableHead>
+                    <TableHead className="text-right font-bold px-4">Disc Val</TableHead>
+                    <TableHead className="text-right font-bold px-4 bg-slate-100 border-l">Total Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {calculations.productsCalculated.map((product) => (
-                    <TableRow key={product.id} className="border-b hover:bg-slate-50">
-                      <TableCell className="font-semibold text-slate-900">
-                        {product.name}
-                        {product.isEligibleForDiscount && (
-                          <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">Eligible</Badge>
-                        )}
+                    <TableRow key={product.id} className="border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
+                      <TableCell className="sticky left-0 z-10 bg-white group-hover:bg-blue-50/30 font-semibold text-slate-900 border-r py-3">
+                        <div className="flex flex-col">
+                          <span className="truncate max-w-[180px]">{product.name}</span>
+                          {product.isEligibleForDiscount && (
+                            <Badge variant="outline" className="mt-1 w-fit text-[10px] py-0 bg-green-50 text-green-700 border-green-200">Eligible</Badge>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers font-medium">
+                      <TableCell className="text-right font-mono text-sm px-4">
                         {product.cashPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-slate-600 text-sm">
+                      <TableCell className="text-right font-mono text-sm text-slate-400 px-4">
                         {product.creditPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="bg-purple-50 border-l border-purple-200 p-2">
+                      <TableCell className="bg-purple-50/30 border-l border-purple-100 p-2">
                         <Input
                           type="number"
+                          inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 text-center font-mono-numbers text-sm bg-white border-purple-200"
+                          className="h-9 text-center font-mono text-sm bg-white border-purple-200 focus:ring-purple-500"
                           value={inputs[product.id]?.quantityGiven}
                           onChange={(e) => handleInputChange(product.id, "quantityGiven", e.target.value)}
                           data-testid={`input-qty-given-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="bg-red-50 border-l border-red-200 p-2">
+                      <TableCell className="bg-red-50/30 border-l border-red-100 p-2">
                         <Input
                           type="number"
+                          inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 text-center font-mono-numbers text-sm bg-white border-red-200"
+                          className="h-9 text-center font-mono text-sm bg-white border-red-200 focus:ring-red-500"
                           value={inputs[product.id]?.quantityLeft}
                           onChange={(e) => handleInputChange(product.id, "quantityLeft", e.target.value)}
                           data-testid={`input-qty-left-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers font-medium">
+                      <TableCell className="text-center font-mono font-medium text-slate-900 px-4">
                         {product.qtySold}
                       </TableCell>
-                      <TableCell className="text-center font-mono-numbers text-slate-700">
+                      <TableCell className="text-center font-mono text-slate-600 px-4">
                         {product.qtyNormal}
                       </TableCell>
-                      <TableCell className="bg-yellow-50 border-l border-yellow-200 p-2">
+                      <TableCell className="bg-yellow-50/30 border-l border-yellow-100 p-2">
                         <Input
                           type="number"
+                          inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 text-center font-mono-numbers text-sm bg-white border-yellow-200"
+                          className="h-9 text-center font-mono text-sm bg-white border-yellow-200 focus:ring-yellow-500"
                           value={inputs[product.id]?.quantitySoldDiscount}
                           onChange={(e) => handleInputChange(product.id, "quantitySoldDiscount", e.target.value)}
                           data-testid={`input-qty-discount-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-slate-700">
-                        {formatCurrency(product.normalValue)}
+                      <TableCell className="text-right font-mono text-sm text-slate-600 px-4">
+                        {product.normalValue.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers text-orange-600 font-medium">
-                        {formatCurrency(product.discountedValue)}
+                      <TableCell className="text-right font-mono text-sm text-orange-600 font-medium px-4">
+                        {product.discountedValue.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono-numbers font-medium text-slate-900">
-                        {formatCurrency(product.totalProductValue)}
+                      <TableCell className="text-right font-mono font-bold text-slate-900 bg-slate-50/50 border-l px-4 py-3">
+                        {product.totalProductValue.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -381,21 +390,25 @@ function MetricCard({ label, value, icon, color, highlight = false }: any) {
     blue: "bg-blue-50 text-blue-700 border-blue-200",
     purple: "bg-purple-50 text-purple-700 border-purple-200",
     orange: "bg-orange-50 text-orange-700 border-orange-200",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm",
   };
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`border rounded-lg p-4 ${colorClasses[color as keyof typeof colorClasses]} ${highlight ? 'ring-2 ring-offset-2 ring-emerald-500' : ''}`}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+      className={`border rounded-xl p-5 ${colorClasses[color as keyof typeof colorClasses]} ${highlight ? 'ring-2 ring-emerald-500 shadow-lg' : ''}`}
     >
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider opacity-75">{label}</p>
-          <p className="text-2xl font-bold font-mono-numbers mt-1 tracking-tight">{value}</p>
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider opacity-70 leading-none">{label}</p>
+          <p className="text-2xl font-black font-mono mt-1 tracking-tight truncate leading-tight">{value}</p>
         </div>
-        {icon}
+        <div className="p-2 bg-white/50 rounded-lg shadow-inner">
+          {icon}
+        </div>
       </div>
     </motion.div>
   );
