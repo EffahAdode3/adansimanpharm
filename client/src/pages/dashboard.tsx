@@ -166,10 +166,10 @@ export default function Dashboard() {
 
         {/* Main Table */}
         <Card className="shadow-md overflow-hidden">
-          <CardHeader className="bg-slate-100 border-b px-4 py-3 md:px-6 md:py-4">
+          <CardHeader className="bg-[#f8fafc] border-b px-4 py-3 md:px-6 md:py-4">
             <CardTitle className="text-base md:text-lg">Product Sales Data</CardTitle>
             <CardDescription className="mt-1 flex items-start gap-2 text-[11px] md:text-sm">
-              <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-blue-600" />
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[#2563eb]" />
               <span>
                 Enter Qty Given, Qty Left, and Qty Discount. 10% discount applies if cash price ≥ 1000 GHS.
               </span>
@@ -177,88 +177,88 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300">
-              <Table className="min-w-[1200px] w-full">
+              <Table className="min-w-[1200px] w-full border-collapse">
                 <TableHeader>
-                  <TableRow className="bg-slate-50 border-b border-slate-200">
-                    <TableHead className="sticky left-0 z-20 bg-slate-50 w-[160px] md:w-[200px] min-w-[160px] md:min-w-[200px] font-bold text-slate-900 border-r text-xs md:text-sm">Product Name</TableHead>
-                    <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-slate-700 text-xs md:text-sm">Cash Price</TableHead>
-                    <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-slate-400 text-xs md:text-sm">Credit Price</TableHead>
-                    <TableHead className="bg-purple-50 text-purple-900 border-l border-purple-200 text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Given</TableHead>
-                    <TableHead className="bg-red-50 text-red-900 border-l border-red-200 text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Left</TableHead>
+                  <TableRow className="bg-[#f8fafc] border-b border-[#e2e8f0]">
+                    <TableHead className="sticky left-0 z-20 bg-[#f8fafc] w-[160px] md:w-[200px] min-w-[160px] md:min-w-[200px] font-bold text-[#0f172a] border-r border-[#e2e8f0] text-xs md:text-sm">Product Name</TableHead>
+                    <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-[#334155] text-xs md:text-sm">Cash Price</TableHead>
+                    <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-[#94a3b8] text-xs md:text-sm">Credit Price</TableHead>
+                    <TableHead className="bg-[#f5f3ff] text-[#4c1d95] border-l border-[#ddd6fe] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Given</TableHead>
+                    <TableHead className="bg-[#fef2f2] text-[#7f1d1d] border-l border-[#fecaca] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Left</TableHead>
                     <TableHead className="text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Sold</TableHead>
                     <TableHead className="text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Normal</TableHead>
-                    <TableHead className="bg-yellow-50 text-yellow-900 border-l border-yellow-200 text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Discount</TableHead>
+                    <TableHead className="bg-[#fefce8] text-[#713f12] border-l border-[#fef08a] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Discount</TableHead>
                     <TableHead className="text-right font-bold px-2 md:px-4 text-xs md:text-sm">Normal Val</TableHead>
                     <TableHead className="text-right font-bold px-2 md:px-4 text-xs md:text-sm">Disc Val</TableHead>
-                    <TableHead className="text-right font-bold px-2 md:px-4 bg-slate-100 border-l text-xs md:text-sm">Total Value</TableHead>
+                    <TableHead className="text-right font-bold px-2 md:px-4 bg-[#f1f5f9] border-l border-[#e2e8f0] text-xs md:text-sm">Total Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {calculations.productsCalculated.map((product) => (
-                    <TableRow key={product.id} className="border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
-                      <TableCell className="sticky left-0 z-10 bg-white font-semibold text-slate-900 border-r py-2 md:py-3 text-xs md:text-sm">
+                    <TableRow key={product.id} className="border-b border-[#f1f5f9] hover:bg-[#eff6ff]/50 transition-colors">
+                      <TableCell className="sticky left-0 z-10 bg-white font-semibold text-[#0f172a] border-r border-[#e2e8f0] py-2 md:py-3 text-xs md:text-sm">
                         <div className="flex flex-col">
                           <span className="truncate max-w-[140px] md:max-w-[180px]">{product.name}</span>
                           {product.isEligibleForDiscount && (
-                            <Badge variant="outline" className="mt-1 w-fit text-[9px] md:text-[10px] py-0 bg-green-50 text-green-700 border-green-200">Eligible</Badge>
+                            <Badge variant="outline" className="mt-1 w-fit text-[9px] md:text-[10px] py-0 bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]">Eligible</Badge>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono text-[11px] md:text-sm px-2 md:px-4">
                         {product.cashPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-slate-400 px-2 md:px-4">
+                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-[#94a3b8] px-2 md:px-4">
                         {product.creditPrice.toFixed(2)}
                       </TableCell>
-                      <TableCell className="bg-purple-50/30 border-l border-purple-100 p-1.5 md:p-2">
+                      <TableCell className="bg-[#f5f3ff]/30 border-l border-[#ede9fe] p-1.5 md:p-2">
                         <Input
                           type="number"
                           inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-purple-200 focus:ring-purple-500"
+                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-[#ddd6fe] focus:ring-[#8b5cf6]"
                           value={inputs[product.id]?.quantityGiven}
                           onChange={(e) => handleInputChange(product.id, "quantityGiven", e.target.value)}
                           data-testid={`input-qty-given-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="bg-red-50/30 border-l border-red-100 p-1.5 md:p-2">
+                      <TableCell className="bg-[#fef2f2]/30 border-l border-[#fee2e2] p-1.5 md:p-2">
                         <Input
                           type="number"
                           inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-red-200 focus:ring-red-500"
+                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-[#fecaca] focus:ring-[#ef4444]"
                           value={inputs[product.id]?.quantityLeft}
                           onChange={(e) => handleInputChange(product.id, "quantityLeft", e.target.value)}
                           data-testid={`input-qty-left-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-center font-mono font-medium text-slate-900 px-2 md:px-4 text-[11px] md:text-sm">
+                      <TableCell className="text-center font-mono font-medium text-[#0f172a] px-2 md:px-4 text-[11px] md:text-sm">
                         {product.qtySold}
                       </TableCell>
-                      <TableCell className="text-center font-mono text-slate-600 px-2 md:px-4 text-[11px] md:text-sm">
+                      <TableCell className="text-center font-mono text-[#475569] px-2 md:px-4 text-[11px] md:text-sm">
                         {product.qtyNormal}
                       </TableCell>
-                      <TableCell className="bg-yellow-50/30 border-l border-yellow-100 p-1.5 md:p-2">
+                      <TableCell className="bg-[#fefce8]/30 border-l border-[#fef9c3] p-1.5 md:p-2">
                         <Input
                           type="number"
                           inputMode="numeric"
                           min="0"
                           placeholder="0"
-                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-yellow-200 focus:ring-yellow-500"
+                          className="h-8 md:h-9 text-center font-mono text-[11px] md:text-sm bg-white border-[#fef08a] focus:ring-[#eab308]"
                           value={inputs[product.id]?.quantitySoldDiscount}
                           onChange={(e) => handleInputChange(product.id, "quantitySoldDiscount", e.target.value)}
                           data-testid={`input-qty-discount-${product.id}`}
                         />
                       </TableCell>
-                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-slate-600 px-2 md:px-4">
+                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-[#475569] px-2 md:px-4">
                         {product.normalValue.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-orange-600 font-medium px-2 md:px-4">
+                      <TableCell className="text-right font-mono text-[11px] md:text-sm text-[#c2410c] font-medium px-2 md:px-4">
                         {product.discountedValue.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right font-mono font-bold text-slate-900 bg-slate-50/50 border-l px-2 md:px-4 py-2 md:py-3 text-[11px] md:text-sm">
+                      <TableCell className="text-right font-mono font-bold text-[#0f172a] bg-[#f8fafc]/50 border-l border-[#e2e8f0] px-2 md:px-4 py-2 md:py-3 text-[11px] md:text-sm">
                         {product.totalProductValue.toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -274,21 +274,21 @@ export default function Dashboard() {
           {/* Inputs Section */}
           <div className="space-y-6">
             <Card className="shadow-md">
-              <CardHeader className="bg-purple-50 border-b">
-                <CardTitle className="text-base">Total Credit Debt</CardTitle>
+              <CardHeader className="bg-[#f5f3ff] border-b border-[#ddd6fe] px-4 py-3 md:px-6 md:py-4">
+                <CardTitle className="text-base text-[#4c1d95]">Total Credit Debt</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <Label htmlFor="credit-debt" className="text-sm font-medium">Value of products sold on credit (GHS)</Label>
+                <Label htmlFor="credit-debt" className="text-sm font-medium text-[#1e1b4b]">Value of products sold on credit (GHS)</Label>
                 <div className="relative mt-3">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6366f1] font-bold">GHS</span>
                   <Input 
                     id="credit-debt"
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    className={`pl-12 font-mono-numbers text-lg h-10 ${
-                      calculations.isCreditDebtInvalid ? "border-red-400 bg-red-50" : "border-purple-300"
+                    className={`pl-12 font-mono text-lg h-10 ${
+                      calculations.isCreditDebtInvalid ? "border-[#ef4444] bg-[#fef2f2]" : "border-[#c7d2fe] focus:ring-[#6366f1]"
                     }`}
                     value={totalCreditDebt}
                     onChange={(e) => {
@@ -299,7 +299,7 @@ export default function Dashboard() {
                   />
                 </div>
                 {calculations.isCreditDebtInvalid && (
-                  <p className="text-xs text-red-600 font-medium mt-2">
+                  <p className="text-xs text-[#ef4444] font-bold mt-2">
                     ⚠ Credit debt cannot exceed total sales ({formatCurrency(calculations.totalSoldValue)})
                   </p>
                 )}
@@ -307,20 +307,20 @@ export default function Dashboard() {
             </Card>
 
             <Card className="shadow-md">
-              <CardHeader className="bg-blue-50 border-b">
-                <CardTitle className="text-base">Total Differences</CardTitle>
+              <CardHeader className="bg-[#eff6ff] border-b border-[#bfdbfe] px-4 py-3 md:px-6 md:py-4">
+                <CardTitle className="text-base text-[#1e40af]">Total Differences</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <Label htmlFor="differences" className="text-sm font-medium">Enter total differences (GHS)</Label>
+                <Label htmlFor="differences" className="text-sm font-medium text-[#1e3a8a]">Enter total differences (GHS)</Label>
                 <div className="relative mt-3">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">GHS</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3b82f6] font-bold">GHS</span>
                   <Input 
                     id="differences"
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    className="pl-12 font-mono-numbers text-lg h-10 border-blue-300"
+                    className="pl-12 font-mono text-lg h-10 border-[#bfdbfe] focus:ring-[#3b82f6]"
                     value={totalDifferences}
                     onChange={(e) => {
                       const val = e.target.value === "" ? "" : parseFloat(e.target.value);
@@ -389,10 +389,10 @@ export default function Dashboard() {
 
 function MetricCard({ label, value, icon, color, highlight = false }: any) {
   const colorClasses = {
-    blue: "bg-blue-50 text-blue-700 border-blue-200",
-    purple: "bg-purple-50 text-purple-700 border-purple-200",
-    orange: "bg-orange-50 text-orange-700 border-orange-200",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm",
+    blue: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]",
+    purple: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]",
+    orange: "bg-[#fff7ed] text-[#c2410c] border-[#ffedd5]",
+    emerald: "bg-[#ecfdf5] text-[#047857] border-[#a7f3d0] shadow-sm",
   };
 
   return (
@@ -401,7 +401,7 @@ function MetricCard({ label, value, icon, color, highlight = false }: any) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
-      className={`border rounded-xl p-5 ${colorClasses[color as keyof typeof colorClasses]} ${highlight ? 'ring-2 ring-emerald-500 shadow-lg' : ''}`}
+      className={`border rounded-xl p-5 ${colorClasses[color as keyof typeof colorClasses]} ${highlight ? 'ring-2 ring-[#10b981] shadow-lg' : ''}`}
     >
       <div className="flex items-start justify-between gap-1">
         <div className="space-y-0.5 min-w-0">
