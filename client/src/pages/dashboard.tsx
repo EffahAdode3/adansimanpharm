@@ -180,14 +180,14 @@ export default function Dashboard() {
               <Table className="min-w-[1200px] w-full border-collapse">
                 <TableHeader>
                   <TableRow className="bg-[#f8fafc] border-b border-[#e2e8f0]">
-                    <TableHead className="sticky left-0 z-20 bg-[#f8fafc] w-[160px] md:w-[200px] min-w-[160px] md:min-w-[200px] font-bold text-[#0f172a] border-r border-[#e2e8f0] text-xs md:text-sm">Product Name</TableHead>
+                    <TableHead className="table-header-sticky w-[160px] md:w-[200px] min-w-[160px] md:min-w-[200px] font-bold text-[#0f172a] text-xs md:text-sm">Product Name</TableHead>
                     <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-[#334155] text-xs md:text-sm">Cash Price</TableHead>
                     <TableHead className="text-right whitespace-nowrap px-2 md:px-4 font-bold text-[#94a3b8] text-xs md:text-sm">Credit Price</TableHead>
-                    <TableHead className="bg-[#f5f3ff] text-[#4c1d95] border-l border-[#ddd6fe] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Given</TableHead>
-                    <TableHead className="bg-[#fef2f2] text-[#7f1d1d] border-l border-[#fecaca] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Left</TableHead>
+                    <TableHead className="bg-purple-input text-[#4c1d95] border-l border-[#ddd6fe] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Given</TableHead>
+                    <TableHead className="bg-red-input text-[#7f1d1d] border-l border-[#fecaca] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Left</TableHead>
                     <TableHead className="text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Sold</TableHead>
                     <TableHead className="text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Normal</TableHead>
-                    <TableHead className="bg-[#fefce8] text-[#713f12] border-l border-[#fef08a] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Discount</TableHead>
+                    <TableHead className="bg-yellow-input text-[#713f12] border-l border-[#fef08a] text-center font-bold px-2 md:px-4 text-xs md:text-sm">Qty Discount</TableHead>
                     <TableHead className="text-right font-bold px-2 md:px-4 text-xs md:text-sm">Normal Val</TableHead>
                     <TableHead className="text-right font-bold px-2 md:px-4 text-xs md:text-sm">Disc Val</TableHead>
                     <TableHead className="text-right font-bold px-2 md:px-4 bg-[#f1f5f9] border-l border-[#e2e8f0] text-xs md:text-sm">Total Value</TableHead>
@@ -196,9 +196,9 @@ export default function Dashboard() {
                 <TableBody>
                   {calculations.productsCalculated.map((product) => (
                     <TableRow key={product.id} className="border-b border-[#f1f5f9] hover:bg-[#eff6ff]/50 transition-colors">
-                      <TableCell className="sticky left-0 z-10 bg-white font-semibold text-[#0f172a] border-r border-[#e2e8f0] py-2 md:py-3 text-xs md:text-sm">
+                      <TableCell className="table-cell-sticky py-2 md:py-3 text-xs md:text-sm">
                         <div className="flex flex-col">
-                          <span className="truncate max-w-[140px] md:max-w-[180px]">{product.name}</span>
+                          <span className="truncate max-w-[140px] md:max-w-[180px] font-semibold text-[#0f172a]">{product.name}</span>
                           {product.isEligibleForDiscount && (
                             <Badge variant="outline" className="mt-1 w-fit text-[9px] md:text-[10px] py-0 bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]">Eligible</Badge>
                           )}
@@ -334,7 +334,7 @@ export default function Dashboard() {
           </div>
 
           {/* Summary */}
-          <Card className="lg:col-span-2 shadow-md bg-gradient-to-br from-slate-900 to-slate-800 text-white overflow-hidden">
+          <Card className="lg:col-span-2 shadow-md summary-card overflow-hidden">
             <CardHeader className="p-4 md:p-6 border-b border-white/10">
               <CardTitle className="text-white text-base md:text-lg">Daily Revenue Summary</CardTitle>
             </CardHeader>
@@ -389,10 +389,10 @@ export default function Dashboard() {
 
 function MetricCard({ label, value, icon, color, highlight = false }: any) {
   const colorClasses = {
-    blue: "bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]",
-    purple: "bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]",
-    orange: "bg-[#fff7ed] text-[#c2410c] border-[#ffedd5]",
-    emerald: "bg-[#ecfdf5] text-[#047857] border-[#a7f3d0] shadow-sm",
+    blue: "metric-card-blue",
+    purple: "metric-card-purple",
+    orange: "metric-card-orange",
+    emerald: "metric-card-emerald",
   };
 
   return (
