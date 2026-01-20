@@ -61,6 +61,8 @@
 .metric-card-orange { background-color: #fff7ed !important; color: #c2410c !important; border: 1px solid #ffedd5 !important; }
 .metric-card-emerald { background-color: #ecfdf5 !important; color: #047857 !important; border: 1px solid #a7f3d0 !important; }
 
+.metric-card-red { background-color: #fef2f2 !important; color: #b91c1c !important; border: 1px solid #fecaca !important; }
+
 .table-header-sticky { position: sticky; left: 0; z-index: 20; background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
 .table-cell-sticky { position: sticky; left: 0; z-index: 10; background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
 

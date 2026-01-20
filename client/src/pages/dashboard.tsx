@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { PRELOADED_PRODUCTS } from "../data/products";
+import { PRELOADED_PRODUCTS, CASH_PRODUCTS } from "../data/products";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
-import { DollarSign, CreditCard, Percent, AlertCircle } from "lucide-react";
+import { DollarSign, CreditCard, Percent, AlertCircle, ShoppingBag, Receipt, MinusCircle, PlusCircle } from "lucide-react";
 
 type ProductInput = {
   quantityGiven: number | "";
@@ -15,7 +15,13 @@ type ProductInput = {
   quantitySoldDiscount: number | "";
 };
 
+type CashProductInput = {
+  quantityGiven: number | "";
+  quantityLeft: number | "";
+};
+
 type InputsMap = Record<string, ProductInput>;
+type CashInputsMap = Record<string, CashProductInput>;
 
 export default function Dashboard() {
   const [inputs, setInputs] = useState<InputsMap>(() => {
@@ -26,25 +32,40 @@ export default function Dashboard() {
     return initial;
   });
 
+  const [cashInputs, setCashInputs] = useState<CashInputsMap>(() => {
+    const initial: CashInputsMap = {};
+    CASH_PRODUCTS.forEach((p) => {
+      initial[p.id] = { quantityGiven: "", quantityLeft: "" };
+    });
+    return initial;
+  });
+
   const [totalCreditDebt, setTotalCreditDebt] = useState<number | "">("");
   const [totalDifferences, setTotalDifferences] = useState<number | "">("");
+  const [oldDebtPaid, setOldDebtPaid] = useState<number | "">("");
+  const [expenses, setExpenses] = useState<number | "">("");
 
   const handleInputChange = (id: string, field: keyof ProductInput, value: string) => {
-    // Basic sanitization: only allow digits and decimals
     const sanitizedValue = value.replace(/[^0-9.]/g, "");
     const numValue = sanitizedValue === "" ? "" : parseFloat(sanitizedValue);
-    
-    // Safety check for NaN or negative numbers
     if (sanitizedValue !== "" && (isNaN(Number(numValue)) || Number(numValue) < 0)) return;
-    
     setInputs((prev) => ({
       ...prev,
       [id]: { ...prev[id], [field]: numValue },
     }));
   };
 
+  const handleCashInputChange = (id: string, field: keyof CashProductInput, value: string) => {
+    const sanitizedValue = value.replace(/[^0-9.]/g, "");
+    const numValue = sanitizedValue === "" ? "" : parseFloat(sanitizedValue);
+    if (sanitizedValue !== "" && (isNaN(Number(numValue)) || Number(numValue) < 0)) return;
+    setCashInputs((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: numValue },
+    }));
+  };
+
   const calculations = useMemo(() => {
-    let totalSoldQuantity = 0;
     let totalSoldValue = 0;
     let totalDiscountedValue = 0;
     let totalQuantityRemaining = 0;
@@ -55,25 +76,16 @@ export default function Dashboard() {
       const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
       const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
       const qtyDiscount = input.quantitySoldDiscount === "" ? 0 : input.quantitySoldDiscount;
-      
-      // Validation: Qty left cannot exceed qty given
       const validQtyLeft = Math.min(qtyLeft, qtyGiven);
-      
-      // Calculate quantities
       const qtySold = Math.max(0, qtyGiven - validQtyLeft);
       const qtyNormal = Math.max(0, qtySold - qtyDiscount);
-      
-      // Check eligibility for discount (cash price >= 1000)
       const isEligibleForDiscount = product.cashPrice >= 1000;
-      
-      // Calculate values: Normal uses CREDIT PRICE, Discounted uses CASH PRICE
       const normalValue = qtyNormal * product.creditPrice;
-      const discountedValue = qtyDiscount * product.cashPrice; // Calculate: Qty Discount * Cash Price
+      const discountedValue = qtyDiscount * product.cashPrice;
       const totalProductValue = normalValue + discountedValue;
 
-      totalSoldQuantity += qtySold;
-      totalSoldValue += normalValue;  // Only add normal value (credit price based)
-      totalDiscountedValue += discountedValue;  // Track all discounted values
+      totalSoldValue += normalValue;
+      totalDiscountedValue += discountedValue;
       totalQuantityRemaining += validQtyLeft;
       totalQuantityGiven += qtyGiven;
 
@@ -90,22 +102,39 @@ export default function Dashboard() {
       };
     });
 
+    let totalCashProductsRevenue = 0;
+    const cashProductsCalculated = CASH_PRODUCTS.map((product) => {
+      const input = cashInputs[product.id];
+      const qtyGiven = input.quantityGiven === "" ? 0 : input.quantityGiven;
+      const qtyLeft = input.quantityLeft === "" ? 0 : input.quantityLeft;
+      const validQtyLeft = Math.min(qtyLeft, qtyGiven);
+      const qtySold = Math.max(0, qtyGiven - validQtyLeft);
+      const productCashValue = qtySold * product.unitPrice;
+
+      totalCashProductsRevenue += productCashValue;
+
+      return {
+        ...product,
+        qtySold,
+        productCashValue,
+        validQtyLeft
+      };
+    });
+
     const creditDebt = totalCreditDebt === "" ? 0 : totalCreditDebt;
     const differences = totalDifferences === "" ? 0 : totalDifferences;
-    const isCreditDebtInvalid = creditDebt > totalSoldValue;
+    const oldDebtVal = oldDebtPaid === "" ? 0 : oldDebtPaid;
+    const expensesVal = expenses === "" ? 0 : expenses;
     
-    // Calculate cash before discount (total normal sales - credit debt - differences)
     const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt - differences);
-    
-    // Apply 10% discount ONLY on the total discounted value
     const totalDiscountAmount = totalDiscountedValue * 0.10;
+    const existingCashSales = cashValueBeforeDiscount + (totalDiscountedValue - totalDiscountAmount);
     
-    // Cash after discount = cash before discount + (total discounted value - total discount amount)
-    const cashValueAfterDiscount = cashValueBeforeDiscount + (totalDiscountedValue - totalDiscountAmount);
+    const finalCashRevenue = existingCashSales + totalCashProductsRevenue + oldDebtVal - expensesVal;
 
     return {
       productsCalculated,
-      totalSoldQuantity,
+      cashProductsCalculated,
       totalSoldValue,
       totalDiscountedValue,
       totalDiscountAmount,
@@ -113,11 +142,13 @@ export default function Dashboard() {
       totalQuantityGiven,
       creditDebt,
       differences,
-      isCreditDebtInvalid,
-      cashValueBeforeDiscount,
-      cashValueAfterDiscount
+      oldDebtVal,
+      expensesVal,
+      totalCashProductsRevenue,
+      existingCashSales,
+      finalCashRevenue
     };
-  }, [inputs, totalCreditDebt, totalDifferences]);
+  }, [inputs, cashInputs, totalCreditDebt, totalDifferences, oldDebtPaid, expenses]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 2 }).format(val);
@@ -136,18 +167,30 @@ export default function Dashboard() {
         </header>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           <MetricCard 
             label="Total Sales" 
-            value={formatCurrency(calculations.totalSoldValue)}
+            value={formatCurrency(calculations.totalSoldValue + calculations.totalDiscountedValue + calculations.totalCashProductsRevenue)}
             icon={<DollarSign className="w-4 h-4 md:w-5 md:h-5" />}
             color="blue"
           />
           <MetricCard 
-            label="Credit Debt" 
-            value={formatCurrency(calculations.creditDebt)}
-            icon={<CreditCard className="w-4 h-4 md:w-5 md:h-5" />}
+            label="Cash Products" 
+            value={formatCurrency(calculations.totalCashProductsRevenue)}
+            icon={<ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />}
+            color="orange"
+          />
+          <MetricCard 
+            label="Old Debt" 
+            value={formatCurrency(calculations.oldDebtVal)}
+            icon={<Receipt className="w-4 h-4 md:w-5 md:h-5" />}
             color="purple"
+          />
+          <MetricCard 
+            label="Expenses" 
+            value={formatCurrency(calculations.expensesVal)}
+            icon={<MinusCircle className="w-4 h-4 md:w-5 md:h-5" />}
+            color="red"
           />
           <MetricCard 
             label="Discount" 
@@ -157,12 +200,78 @@ export default function Dashboard() {
           />
           <MetricCard 
             label="Final Cash" 
-            value={formatCurrency(calculations.cashValueAfterDiscount)}
-            icon={<DollarSign className="w-4 h-4 md:w-5 md:h-5" />}
+            value={formatCurrency(calculations.finalCashRevenue)}
+            icon={<PlusCircle className="w-4 h-4 md:w-5 md:h-5" />}
             color="emerald"
             highlight
           />
         </div>
+
+        {/* Cash Products Table */}
+        <Card className="shadow-md overflow-hidden border-orange-200">
+          <CardHeader className="bg-[#fff7ed] border-b border-[#ffedd5] px-4 py-3 md:px-6 md:py-4">
+            <CardTitle className="text-base md:text-lg text-[#c2410c]">Cash Products</CardTitle>
+            <CardDescription className="mt-1 text-[11px] md:text-sm text-[#9a3412]">
+              Track standalone cash sales. Enter Qty Given and Qty Left.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-orange-200">
+              <Table className="min-w-[800px] w-full border-collapse">
+                <TableHeader>
+                  <TableRow className="bg-[#fff7ed] border-b border-[#ffedd5]">
+                    <TableHead className="table-header-sticky w-[200px] font-bold text-[#9a3412] text-xs md:text-sm">Product Name</TableHead>
+                    <TableHead className="text-right font-bold text-[#9a3412] text-xs md:text-sm">Unit Price</TableHead>
+                    <TableHead className="bg-[#f5f3ff] text-center font-bold text-[#4c1d95] border-l border-[#ddd6fe] text-xs md:text-sm">Qty Given</TableHead>
+                    <TableHead className="bg-[#fef2f2] text-center font-bold text-[#7f1d1d] border-l border-[#fecaca] text-xs md:text-sm">Qty Left</TableHead>
+                    <TableHead className="text-center font-bold text-[#9a3412] text-xs md:text-sm">Qty Sold</TableHead>
+                    <TableHead className="text-right font-bold text-[#9a3412] bg-[#fff7ed] border-l border-[#ffedd5] text-xs md:text-sm">Cash Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {calculations.cashProductsCalculated.map((product) => (
+                    <TableRow key={product.id} className="border-b border-[#ffedd5] hover:bg-[#fff7ed]/50">
+                      <TableCell className="table-cell-sticky py-2 text-xs md:text-sm">
+                        <span className="font-semibold text-[#0f172a]">{product.name}</span>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-[11px] md:text-sm">
+                        {product.unitPrice.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="bg-[#f5f3ff]/30 border-l border-[#ede9fe] p-1.5">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          placeholder="0"
+                          className="h-8 text-center font-mono bg-white border-[#ddd6fe]"
+                          value={cashInputs[product.id]?.quantityGiven}
+                          onChange={(e) => handleCashInputChange(product.id, "quantityGiven", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell className="bg-[#fef2f2]/30 border-l border-[#fee2e2] p-1.5">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          placeholder="0"
+                          className="h-8 text-center font-mono bg-white border-[#fecaca]"
+                          value={cashInputs[product.id]?.quantityLeft}
+                          onChange={(e) => handleCashInputChange(product.id, "quantityLeft", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-center font-mono text-[11px] md:text-sm">
+                        {product.qtySold}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-bold text-[#c2410c] bg-[#fff7ed]/30 border-l border-[#ffedd5]">
+                        {product.productCashValue.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Table */}
         <Card className="shadow-md overflow-hidden">
@@ -331,6 +440,47 @@ export default function Dashboard() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* New Global Inputs */}
+            <Card className="shadow-md border-purple-200">
+              <CardHeader className="bg-[#f5f3ff] border-b border-[#ddd6fe] px-4 py-3 md:px-6 md:py-4">
+                <CardTitle className="text-base text-[#4c1d95]">Old Debt & Expenses</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div>
+                  <Label htmlFor="old-debt" className="text-sm font-medium text-[#4c1d95]">Old Debt Paid (GHS)</Label>
+                  <div className="relative mt-1.5">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6d28d9] font-bold">GHS</span>
+                    <Input 
+                      id="old-debt"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-12 font-mono border-[#ddd6fe]"
+                      value={oldDebtPaid}
+                      onChange={(e) => setOldDebtPaid(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="expenses" className="text-sm font-medium text-[#7f1d1d]">Expenses (GHS)</Label>
+                  <div className="relative mt-1.5">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ef4444] font-bold">GHS</span>
+                    <Input 
+                      id="expenses"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-12 font-mono border-[#fecaca]"
+                      value={expenses}
+                      onChange={(e) => setExpenses(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Summary */}
@@ -340,44 +490,38 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 md:p-6 space-y-3 md:space-y-4 text-xs md:text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-slate-300">Total Sales Value</span>
-                <span className="font-mono font-semibold">{formatCurrency(calculations.totalSoldValue)}</span>
+                <span className="text-slate-300">Existing Cash Sales</span>
+                <span className="font-mono font-semibold">{formatCurrency(calculations.existingCashSales)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-300">Less: Total Credit Debt</span>
-                <span className="font-mono text-red-300">- {formatCurrency(calculations.creditDebt)}</span>
+                <span className="text-slate-300">Total Cash Products Revenue</span>
+                <span className="font-mono text-orange-300">+ {formatCurrency(calculations.totalCashProductsRevenue)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-300">Less: Total Differences</span>
-                <span className="font-mono text-blue-300">- {formatCurrency(calculations.differences)}</span>
+                <span className="text-slate-300">Old Debt Paid</span>
+                <span className="font-mono text-purple-300">+ {formatCurrency(calculations.oldDebtVal)}</span>
               </div>
-              <Separator className="bg-white/10" />
-              <div className="flex justify-between items-center font-medium">
-                <span className="text-slate-100">Cash Sales Before Discount</span>
-                <span className="font-mono">{formatCurrency(calculations.cashValueBeforeDiscount)}</span>
-              </div>
-              <div className="pt-1 md:pt-2">
-                <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider mb-1">10% Discount Applied to:</p>
-                <p className="text-xs md:text-sm font-mono text-orange-300 ml-2 md:ml-4 flex justify-between">
-                  <span>Total Discounted Value:</span>
-                  <span>{formatCurrency(calculations.totalDiscountedValue)}</span>
-                </p>
-              </div>
-              <div className="flex justify-between items-center pt-1 md:pt-2">
-                <span className="text-slate-300">Less: Total Discount Amount</span>
-                <span className="font-mono text-orange-300">- {formatCurrency(calculations.totalDiscountAmount)}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-300">Expenses</span>
+                <span className="font-mono text-red-300">- {formatCurrency(calculations.expensesVal)}</span>
               </div>
               <Separator className="bg-white/10" />
               <div className="pt-2 md:pt-4">
                 <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider mb-2">Final Cash Revenue</p>
                 <p className="text-2xl md:text-4xl font-black font-mono text-emerald-400 leading-none">
-                  {formatCurrency(calculations.cashValueAfterDiscount)}
+                  {formatCurrency(calculations.finalCashRevenue)}
                 </p>
               </div>
               <Separator className="bg-white/10" />
-              <div className="flex justify-between items-center text-[10px] md:text-xs pt-1">
-                <span className="text-slate-400">Inventory Remaining</span>
-                <span className="font-mono">{calculations.totalQuantityRemaining} / {calculations.totalQuantityGiven} units</span>
+              <div className="grid grid-cols-2 gap-4 text-[10px] md:text-xs pt-1">
+                <div className="flex justify-between border-r border-white/10 pr-4">
+                  <span className="text-slate-400">Normal Sales</span>
+                  <span className="font-mono">{formatCurrency(calculations.totalSoldValue)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Discounted Value</span>
+                  <span className="font-mono">{formatCurrency(calculations.totalDiscountedValue)}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -393,6 +537,7 @@ function MetricCard({ label, value, icon, color, highlight = false }: any) {
     purple: "metric-card-purple",
     orange: "metric-card-orange",
     emerald: "metric-card-emerald",
+    red: "metric-card-red",
   };
 
   return (

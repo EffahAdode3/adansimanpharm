@@ -1,0 +1,149 @@
+Upgrade the existing accounting web app by ADDING a new feature called “Cash Products”.
+Do NOT modify or break existing credit, discount, or reporting logic.
+
+========================
+NEW FEATURE: CASH PRODUCTS
+========================
+
+1. Cash Products Data
+Create a new table called “Cash Products” and preload it with the following products
+(Product Name – Unit Price in GHS):
+
+Pregnancy Cassette – 75.00
+Picron Forte – 69.90
+Picron Forte Pain Gel – 6.90
+Redsungelly – 9.99
+Colodium (Loperon) – 16.50
+Ephedrine 1% Drop – 4.50
+Ephedrine 0.5% Drop – 3.90
+Salidrop (Maestro) – 3.50
+Paratop Tablet – 33.90
+Roxidol – 39.90
+Roxodol Extra – 25.90
+Wormron Tablet – 29.50
+Wormron Suspension – 3.50
+Postinor-2 – 2.90
+Rodeine Plus Caps (Glomol Plus) – 69.90
+Glopain Tablet – 25.80
+Ronzole (Omeprazole) 20mg – 29.50
+Ronaxicam – 22.90
+Yodi – 8.98
+Chloramphenicol Eye Drop – 6.98
+Gentamicin Ear/Eye Drop – 6.98
+Cipro Ear/Eye Drop (Cipac) – 6.98
+Malaria Test Kit – 120.00
+Arfan Tablet – 4.99
+Cotton 500g – 48.00
+Honygra 200g – 3.98
+Cold Act Tablet – 49.90
+Parafenac – 29.90
+Parafenac Extra – 33.90
+Ibuglo Plus – 79.90
+Tetracycline Caps – 70.00
+Levon-2 – 10.98
+Contra-72 – 89.90
+Cyprovite (Glovit) Tablet – 6.59
+Happyrona Forte Tablet – 79.90
+Fluconazole 200mg – 59.90
+Fluconazole 150mg – 59.90
+Piroxicam (Global) – 21.90
+Ronvit Baby Drop 60ml – 9.80
+Poksra – 49.90
+Paratop Extra – 39.90
+Ronfit Forte Caps – 55.00
+Syringe & Needle 10ml – 89.98
+Syringe & Needle 2ml – 69.00
+Syringe & Needle 5ml – 69.00
+Sulphathiazole (M&B) – 170.00
+Ronamol Plus (10) – 29.50
+Ronamol Plus – 45.00
+Amoksiclav (Rox-Clav) – 39.50
+Ronamol – 39.50
+Ronamol Pain Gel – 6.90
+Paraglo Tab – 35.90
+Ronfit Forte Pain Gel – 6.90
+Redsun Caps – 159.00
+Ronabru Tab – 5.50
+Vermox 500mg (Meberona) – 33.00
+Ronluz 100mg – 35.90
+Ronfit Extra – 59.90
+Ronktone Forte – 110.00
+Plastic Envelope – 5.90
+Malluart DS 560mg – 12.50
+Hemerona Plus – 12.50
+Ronabru Forte – 5.50
+Ronapar Max (30) – 49.90
+Ronakcid – 29.50
+Ronsons Forte Caps – 17.90
+Ronak Inhaler – 60.00
+Onidoll Tablet – 39.50
+Dermiron Plus – 8.90
+Malluart Forte Suspension – 12.50
+Ronacoda Balm (Abonike) – 6.85
+Redsun Condom – 68.00
+Ronake Lozenges – 65.00
+Examination Gloves – 55.98
+Ronapar Max – 12.90
+Ronadol Tablet – 10.98
+Ronadem B/S 30g – 6.90
+Ronvit Drop 100ml – 13.50
+Picron Extra – 39.50
+Ronabru Max 10 – 49.50
+Pregnancy Strip – 180.00
+Ronfit Forte Spray – 29.50
+Ronfit Cold Flu Tab – 15.90
+Malluart 140mg (Afran) – 8.90
+Paraglo Plus Tablet – 69.80
+Roxfer Capsule – 12.90
+Parafenac DS Tablet – 25.00
+Parafenac Plus – 25.00
+Ronagra Jelly – 17.50
+
+2. User Input (VERY IMPORTANT)
+For EACH cash product, the user must ONLY enter:
+- Quantity given
+- Quantity left (returned stock)
+
+3. Automatic Calculations (Per Product)
+- Quantity sold = Quantity given − Quantity left
+- Product cash value = Quantity sold × Unit price
+
+4. Cash Products Total
+- Sum all product cash values into:
+  “Total Cash Products Revenue”
+
+5. Global Inputs (ONCE)
+Add two inputs:
+- Old Debt Paid (GHS)
+- Expenses (GHS)
+
+6. Final Cash Revenue
+Final Cash Revenue =
+Existing Cash Sales
++ Total Cash Products Revenue
++ Old Debt Paid
+− Expenses
+
+7. Reports
+Display clearly:
+- Total Cash Products Revenue
+- Old Debt Paid
+- Expenses
+- Final Cash Revenue
+
+8. Validation
+- Quantity left must not exceed quantity given
+- No negative values
+- Automatic recalculation on input change
+
+9. UI / UX
+- Table-based layout
+- Mobile-friendly
+- Minimal inputs
+- Clean and readable
+
+10. Technical
+- Clean JavaScript code
+- Production-ready
+- Vercel compatible
+- Do NOT remove existing features
