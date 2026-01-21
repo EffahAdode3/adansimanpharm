@@ -126,11 +126,21 @@ export default function Dashboard() {
     const oldDebtVal = oldDebtPaid === "" ? 0 : oldDebtPaid;
     const expensesVal = expenses === "" ? 0 : expenses;
     
-    const cashValueBeforeDiscount = Math.max(0, totalSoldValue - creditDebt - differences);
+    // Total discount from all products
     const totalDiscountAmount = totalDiscountedValue * 0.10;
-    const existingCashSales = cashValueBeforeDiscount + (totalDiscountedValue - totalDiscountAmount);
     
-    const finalCashRevenue = existingCashSales + totalCashProductsRevenue + oldDebtVal - expensesVal;
+    // Existing Cash Sales calculation:
+    // This is ONLY normal sales minus debt and differences.
+    // Discounted items are now completely independent.
+    const existingCashSales = Math.max(0, totalSoldValue - creditDebt - differences);
+    
+    // Final Cash Revenue calculation:
+    // Existing Cash + Cash Products + Old Debt - Expenses + (Discounted Value - Discount Amount)
+    const finalCashRevenue = existingCashSales + 
+                            totalCashProductsRevenue + 
+                            oldDebtVal - 
+                            expensesVal + 
+                            (totalDiscountedValue - totalDiscountAmount);
 
     return {
       productsCalculated,
@@ -490,7 +500,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 md:p-6 space-y-3 md:space-y-4 text-xs md:text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-slate-300">Existing Cash Sales</span>
+                <span className="text-slate-300">Existing Cash Sales (Normal)</span>
                 <span className="font-mono font-semibold">{formatCurrency(calculations.existingCashSales)}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -501,11 +511,36 @@ export default function Dashboard() {
                 <span className="text-slate-300">Old Debt Paid</span>
                 <span className="font-mono text-purple-300">+ {formatCurrency(calculations.oldDebtVal)}</span>
               </div>
+              
+              <Separator className="bg-white/10" />
+              
+              <div className="pt-2">
+                <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider mb-2">Discount Section (Independent)</p>
+                <div className="space-y-2 ml-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Discounted Value (Before 10%)</span>
+                    <span className="font-mono text-blue-300">{formatCurrency(calculations.totalDiscountedValue)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Less: 10% Discount Amount</span>
+                    <span className="font-mono text-red-300">- {formatCurrency(calculations.totalDiscountAmount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-medium">
+                    <span className="text-slate-100">Net Discounted Revenue</span>
+                    <span className="font-mono text-emerald-300">+ {formatCurrency(calculations.totalDiscountedValue - calculations.totalDiscountAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-white/10" />
+
               <div className="flex justify-between items-center">
                 <span className="text-slate-300">Expenses</span>
-                <span className="font-mono text-red-300">- {formatCurrency(calculations.expensesVal)}</span>
+                <span className="font-mono text-red-400">- {formatCurrency(calculations.expensesVal)}</span>
               </div>
+              
               <Separator className="bg-white/10" />
+              
               <div className="pt-2 md:pt-4">
                 <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider mb-2">Final Cash Revenue</p>
                 <p className="text-2xl md:text-4xl font-black font-mono text-emerald-400 leading-none">
@@ -515,12 +550,12 @@ export default function Dashboard() {
               <Separator className="bg-white/10" />
               <div className="grid grid-cols-2 gap-4 text-[10px] md:text-xs pt-1">
                 <div className="flex justify-between border-r border-white/10 pr-4">
-                  <span className="text-slate-400">Normal Sales</span>
+                  <span className="text-slate-400">Total Normal Sales</span>
                   <span className="font-mono">{formatCurrency(calculations.totalSoldValue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Discounted Value</span>
-                  <span className="font-mono">{formatCurrency(calculations.totalDiscountedValue)}</span>
+                  <span className="text-slate-400">Total Credit Debt</span>
+                  <span className="font-mono text-red-300">{formatCurrency(calculations.creditDebt)}</span>
                 </div>
               </div>
             </CardContent>
