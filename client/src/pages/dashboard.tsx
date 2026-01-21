@@ -499,10 +499,30 @@ export default function Dashboard() {
               <CardTitle className="text-white text-base md:text-lg">Daily Revenue Summary</CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6 space-y-3 md:space-y-4 text-xs md:text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-300">Existing Cash Sales (Normal)</span>
-                <span className="font-mono font-semibold">{formatCurrency(calculations.existingCashSales)}</span>
+              <div className="pt-2">
+                <p className="text-[10px] md:text-xs text-slate-400 uppercase tracking-wider mb-2">Products buy on cash calculation</p>
+                <div className="space-y-2 ml-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Total Normal Sales</span>
+                    <span className="font-mono text-blue-300">{formatCurrency(calculations.totalSoldValue)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Less: Total Credit Debt</span>
+                    <span className="font-mono text-red-300">- {formatCurrency(calculations.creditDebt)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Less: Total Differences</span>
+                    <span className="font-mono text-red-300">- {formatCurrency(calculations.differences)}</span>
+                  </div>
+                  <div className="flex justify-between items-center font-medium border-t border-white/10 pt-2">
+                    <span className="text-slate-100">Products buy on cash (Total)</span>
+                    <span className="font-mono font-semibold text-emerald-300">{formatCurrency(calculations.existingCashSales)}</span>
+                  </div>
+                </div>
               </div>
+              
+              <Separator className="bg-white/10" />
+              
               <div className="flex justify-between items-center">
                 <span className="text-slate-300">Total Cash Products Revenue</span>
                 <span className="font-mono text-orange-300">+ {formatCurrency(calculations.totalCashProductsRevenue)}</span>
