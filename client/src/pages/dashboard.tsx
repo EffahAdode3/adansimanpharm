@@ -129,6 +129,9 @@ export default function Dashboard() {
     // Total discount from all products
     const totalDiscountAmount = totalDiscountedValue * 0.10;
     
+    // Check if credit debt is invalid (cannot exceed total normal sales)
+    const isCreditDebtInvalid = creditDebt > totalSoldValue;
+    
     // Existing Cash Sales calculation:
     // This is ONLY normal sales minus debt and differences.
     // Discounted items are now completely independent.
@@ -156,7 +159,8 @@ export default function Dashboard() {
       expensesVal,
       totalCashProductsRevenue,
       existingCashSales,
-      finalCashRevenue
+      finalCashRevenue,
+      isCreditDebtInvalid
     };
   }, [inputs, cashInputs, totalCreditDebt, totalDifferences, oldDebtPaid, expenses]);
 
