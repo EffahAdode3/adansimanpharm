@@ -127,4 +127,5 @@ export const CASH_PRODUCTS: CashProduct[] = [
   { id: "cp89", name: "Ronagra Jelly", unitPrice: 17.50 },
    { id: "cp90", name: "Pedol", unitPrice: 29.50 },
    { id: "cp91", name: "Anafranil ", unitPrice: 120.00 },
+  { id: "cp92", name: "Valuepack ", unitPrice: 29.00 },
 ];
