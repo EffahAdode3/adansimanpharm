@@ -26,7 +26,7 @@ export const PRELOADED_PRODUCTS: Product[] = [
   { id: "p18", name: "Expect Sed", cashPrice: 4.50, creditPrice: 4.90 },
   { id: "p19", name: "Eusol Lotion", cashPrice: 4.50, creditPrice: 4.90 },
   { id: "p20", name: "Mist Senna", cashPrice: 4.50, creditPrice: 4.90 },
-  { id: "p21", name: "GV Paint", cashPrice: 2.50, creditPrice: 2.90 },
+  { id: "p21", name: "GV Paint", cashPrice: 3.50, creditPrice: 3.90 },
 ];
 
 export interface CashProduct {
@@ -43,7 +43,7 @@ export const CASH_PRODUCTS: CashProduct[] = [
   { id: "cp5", name: "Colodium (Loperon)", unitPrice: 16.50 },
   { id: "cp6", name: "Ephedrine 1% Drop", unitPrice: 4.50 },
   { id: "cp7", name: "Ephedrine 0.5% Drop", unitPrice: 3.90 },
-  { id: "cp8", name: "Salidrop (Maestro)", unitPrice: 3.50 },
+  { id: "cp8", name: "Salidrop (Maestro)", unitPrice: 5.50 },
   { id: "cp9", name: "Paratop Tablet", unitPrice: 33.90 },
   { id: "cp10", name: "Roxidol", unitPrice: 39.50 },
   { id: "cp11", name: "Roxodol Extra", unitPrice: 25.90 },
@@ -128,4 +128,7 @@ export const CASH_PRODUCTS: CashProduct[] = [
    { id: "cp90", name: "Pedol", unitPrice: 29.50 },
    { id: "cp91", name: "Anafranil ", unitPrice: 120.00 },
   { id: "cp92", name: "Valuepack ", unitPrice: 29.00 },
+   { id: "cp93", name: "Free Needle ", unitPrice: 29.50 },
+  { id: "cp94", name: "Gauze Bandage 3inches ", unitPrice: 24.50 },
+  { id: "cp95", name: "Crepe bandage ", unitPrice: 114 },
 ];
